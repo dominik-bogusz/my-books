@@ -169,7 +169,15 @@ const BookDetail = () => {
 					{book.categories && book.categories.length > 0 && (
 						<div className='mb-4'>
 							{book.categories.map((category, index) => (
-								<span key={index} className='badge bg-primary me-2 mb-2'>
+								<span
+									key={index}
+									className='badge me-2 mb-2 px-4 py-2 fs-6'
+									style={{
+										background:
+											'linear-gradient(90deg, #DA831C 0%, #FFD028 100%)',
+										border: 'none',
+									}}
+								>
 									{category}
 								</span>
 							))}
