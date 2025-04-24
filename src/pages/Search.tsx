@@ -55,17 +55,10 @@ const Search = () => {
 	return (
 		<div className='container py-4'>
 			<div className='d-flex justify-content-between align-items-center mb-4'>
-				<h2>
+				<h3>
 					Wyniki wyszukiwania dla:{' '}
 					<span className='text-primary'>"{searchTerm}"</span>
-				</h2>
-
-				{!error && books.length > 0 && (
-					<span className='badge bg-primary fs-6'>
-						<i className='fas fa-book me-1'></i>
-						Znaleziono {totalResults} wyników
-					</span>
-				)}
+				</h3>
 			</div>
 
 			{error && (
@@ -73,12 +66,6 @@ const Search = () => {
 					<i className='fas fa-exclamation-triangle me-2'></i>
 					{error}
 				</div>
-			)}
-
-			{!error && books.length > 0 && !isLoading && (
-				<p className='text-center text-muted mb-4'>
-					Strona {currentPage} z {Math.ceil(totalResults / resultsPerPage)}
-				</p>
 			)}
 
 			<BookList

@@ -3,7 +3,6 @@ import { GoogleBookResponse } from '../types/book';
 
 const BASE_URL = 'https://www.googleapis.com/books/v1/volumes';
 
-// Properly access environment variable
 const API_KEY = import.meta.env.VITE_GOOGLE_BOOKS_API_KEY || '';
 
 export const searchBooks = async (
@@ -13,6 +12,10 @@ export const searchBooks = async (
 	language: string = ''
 ): Promise<GoogleBookResponse> => {
 	try {
+		if (!query.trim()) {
+			return { items: [], totalItems: 0 };
+		}
+
 		let url = `${BASE_URL}?q=${encodeURIComponent(
 			query
 		)}&maxResults=${maxResults}&startIndex=${startIndex}`;
@@ -21,17 +24,12 @@ export const searchBooks = async (
 			url += `&langRestrict=${language}`;
 		}
 
-		// Only add API key if it exists
-		if (API_KEY) {
-			url += `&key=${API_KEY}`;
-		} else {
-			console.warn('API key not found. Some features may be limited.');
-		}
+		if (API_KEY) url += `&key=${API_KEY}`;
 
 		const response = await axios.get(url);
 
 		if (!response.data.items) {
-			console.log('No results from API');
+			console.log('Brak wyników z API dla zapytania:', query);
 			return { items: [], totalItems: 0 };
 		}
 
@@ -40,26 +38,51 @@ export const searchBooks = async (
 			totalItems: response.data.totalItems || 0,
 		};
 	} catch (error) {
-		console.error('Error searching books:', error);
-		return { items: [], totalItems: 0 };
+		console.error('Błąd podczas wyszukiwania książek:', error);
+
+		throw new Error(
+			'Wystąpił błąd podczas wyszukiwania książek. Spróbuj ponownie później.'
+		);
 	}
 };
 
 export const getBookById = async (bookId: string) => {
 	try {
+		if (!bookId.trim()) {
+			throw new Error('Nie podano identyfikatora książki');
+		}
+
 		let url = `${BASE_URL}/${bookId}`;
 
-		// Only add API key if it exists
 		if (API_KEY) {
 			url += `?key=${API_KEY}`;
 		} else {
-			console.warn('API key not found. Some features may be limited.');
+			console.warn(
+				'Nie znaleziono klucza API. Niektóre funkcje mogą być ograniczone.'
+			);
 		}
 
 		const response = await axios.get(url);
 		return response.data;
 	} catch (error) {
-		console.error('Error fetching book details:', error);
-		throw new Error('Could not fetch book details');
+		console.error('Błąd podczas pobierania szczegółów książki:', error);
+
+		if (axios.isAxiosError(error)) {
+			if (error.response?.status === 404) {
+				throw new Error('Nie znaleziono książki o podanym identyfikatorze.');
+			} else if (error.response?.status === 429) {
+				throw new Error(
+					'Przekroczono limit zapytań do API. Spróbuj ponownie później.'
+				);
+			} else if (error.code === 'ECONNABORTED') {
+				throw new Error(
+					'Upłynął limit czasu zapytania. Sprawdź swoje połączenie z internetem.'
+				);
+			}
+		}
+
+		throw new Error(
+			'Nie udało się pobrać szczegółów książki. Spróbuj ponownie później.'
+		);
 	}
 };

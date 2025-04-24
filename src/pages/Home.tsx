@@ -10,7 +10,6 @@ const Home = () => {
 					backgroundColor: '#354045',
 				}}
 			>
-				Test
 				<div className='container py-4'>
 					<h1 className='display-4 fw-bold'>
 						Odkryj swoją następną ulubioną książkę
