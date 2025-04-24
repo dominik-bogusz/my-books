@@ -1,15 +1,22 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 
 const Navbar = () => {
 	const [searchQuery, setSearchQuery] = useState('');
 	const navigate = useNavigate();
+	const { isAuthenticated, user, logout } = useAuth();
 
 	const handleSearch = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (searchQuery.trim()) {
 			navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
 		}
+	};
+
+	const handleLogout = async () => {
+		await logout();
+		navigate('/');
 	};
 
 	return (
@@ -25,26 +32,109 @@ const Navbar = () => {
 					/>
 					<span style={{ letterSpacing: '0.05em' }}>MyBooks</span>
 				</Link>
-				<form className='d-flex py-2' role='search' onSubmit={handleSearch}>
-					<input
-						className='form-control me-2'
-						type='search'
-						placeholder='Wyszukaj książki...'
-						aria-label='Search'
-						value={searchQuery}
-						onChange={(e) => setSearchQuery(e.target.value)}
-					/>
-					<button
-						className='btn text-white fw-semi-bold btn-lg w-50'
-						style={{
-							background: 'linear-gradient(90deg, #DA831C 0%, #FFD028 100%)',
-							border: 'none',
-						}}
-						type='submit'
+
+				<button
+					className='navbar-toggler'
+					type='button'
+					data-bs-toggle='collapse'
+					data-bs-target='#navbarContent'
+					aria-controls='navbarContent'
+					aria-expanded='false'
+					aria-label='Toggle navigation'
+				>
+					<span className='navbar-toggler-icon'></span>
+				</button>
+
+				<div className='collapse navbar-collapse' id='navbarContent'>
+					<form
+						className='d-flex py-2 mx-auto'
+						role='search'
+						onSubmit={handleSearch}
 					>
-						Szukaj
-					</button>
-				</form>
+						<input
+							className='form-control me-2'
+							type='search'
+							placeholder='Wyszukaj książki...'
+							aria-label='Search'
+							value={searchQuery}
+							onChange={(e) => setSearchQuery(e.target.value)}
+						/>
+						<button
+							className='btn text-white fw-semi-bold btn-lg'
+							style={{
+								background: 'linear-gradient(90deg, #DA831C 0%, #FFD028 100%)',
+								border: 'none',
+							}}
+							type='submit'
+						>
+							Szukaj
+						</button>
+					</form>
+
+					<div className='ms-auto d-flex align-items-center'>
+						{isAuthenticated ? (
+							<div className='dropdown'>
+								<button
+									className='btn btn-link text-dark dropdown-toggle text-decoration-none d-flex align-items-center'
+									type='button'
+									id='userDropdown'
+									data-bs-toggle='dropdown'
+									aria-expanded='false'
+								>
+									<div
+										className='me-2 rounded-circle bg-light d-flex align-items-center justify-content-center'
+										style={{ width: '32px', height: '32px' }}
+									>
+										<span>
+											{user?.user_metadata?.username?.[0]?.toUpperCase() ||
+												user?.email?.[0]?.toUpperCase() ||
+												'U'}
+										</span>
+									</div>
+									<span className='d-none d-sm-inline'>
+										{user?.user_metadata?.username ||
+											user?.email?.split('@')[0]}
+									</span>
+								</button>
+								<ul
+									className='dropdown-menu dropdown-menu-end'
+									aria-labelledby='userDropdown'
+								>
+									<li>
+										<Link className='dropdown-item' to='/profile'>
+											Mój profil
+										</Link>
+									</li>
+									<li>
+										<hr className='dropdown-divider' />
+									</li>
+									<li>
+										<button className='dropdown-item' onClick={handleLogout}>
+											Wyloguj się
+										</button>
+									</li>
+								</ul>
+							</div>
+						) : (
+							<div className='d-flex'>
+								<Link to='/login' className='btn btn-outline-primary me-2'>
+									Zaloguj się
+								</Link>
+								<Link
+									to='/register'
+									className='btn text-white'
+									style={{
+										background:
+											'linear-gradient(90deg, #DA831C 0%, #FFD028 100%)',
+										border: 'none',
+									}}
+								>
+									Zarejestruj się
+								</Link>
+							</div>
+						)}
+					</div>
+				</div>
 			</div>
 		</nav>
 	);

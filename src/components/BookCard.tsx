@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Book } from '../types/book';
+import BookActions from './BookActions';
 
 interface BookCardProps {
 	book: Book;
@@ -17,13 +18,16 @@ const BookCard: React.FC<BookCardProps> = ({ book }) => {
 
 	return (
 		<div className='card h-100 shadow-sm'>
-			<div className='text-center pt-3'>
+			<div className='text-center pt-3 position-relative'>
 				<img
 					src={book.imageLinks?.thumbnail || defaultCover}
 					alt={book.title}
 					className='img-fluid rounded'
 					style={{ height: '200px', objectFit: 'contain' }}
 				/>
+				<div className='position-absolute top-0 end-0 m-2'>
+					<BookActions book={book} size='sm' />
+				</div>
 			</div>
 			<div className='card-body d-flex flex-column text-center'>
 				<h5 className='card-title text-truncate'>{book.title}</h5>

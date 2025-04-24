@@ -1,13 +1,26 @@
 import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getBookById } from '../api/googleBooks';
 import { Book } from '../types/book';
+import BookActions from '../components/BookActions';
+import { useAuth } from '../context/AuthContext';
+import { useBookActions } from '../hooks/useBookActions';
 
 const BookDetail = () => {
 	const { id } = useParams<{ id: string }>();
 	const [book, setBook] = useState<Book | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const { isAuthenticated } = useAuth();
+	const {
+		isFavorite,
+		isInReadingList,
+		addToFavorites,
+		removeFromFavorites,
+		addToReadingList,
+		removeFromReadingList,
+	} = useBookActions();
+	const navigate = useNavigate();
 
 	useEffect(() => {
 		const fetchBookDetails = async () => {
@@ -48,6 +61,36 @@ const BookDetail = () => {
 
 		fetchBookDetails();
 	}, [id]);
+
+	const handleToggleFavorite = async () => {
+		if (!book) return;
+
+		if (!isAuthenticated) {
+			navigate('/login', { state: { from: { pathname: `/book/${id}` } } });
+			return;
+		}
+
+		if (isFavorite(book.id)) {
+			await removeFromFavorites(book.id);
+		} else {
+			await addToFavorites(book);
+		}
+	};
+
+	const handleToggleReadingList = async () => {
+		if (!book) return;
+
+		if (!isAuthenticated) {
+			navigate('/login', { state: { from: { pathname: `/book/${id}` } } });
+			return;
+		}
+
+		if (isInReadingList(book.id)) {
+			await removeFromReadingList(book.id);
+		} else {
+			await addToReadingList(book);
+		}
+	};
 
 	if (isLoading) {
 		return (
@@ -96,6 +139,8 @@ const BookDetail = () => {
 	}
 
 	const defaultCover = 'https://via.placeholder.com/300x450?text=Brak+Okładki';
+	const isBookmarked = isFavorite(book.id);
+	const isInReading = isInReadingList(book.id);
 
 	return (
 		<div className='container py-4'>
@@ -109,12 +154,40 @@ const BookDetail = () => {
 			<div className='row'>
 				<div className='col-12 col-md-4 col-lg-3 mb-4'>
 					<div className='d-flex flex-column'>
-						<img
-							src={book.imageLinks?.thumbnail || defaultCover}
-							alt={book.title}
-							className='img-fluid rounded shadow mx-auto mb-4'
-							style={{ maxHeight: '400px', width: 'auto' }}
-						/>
+						<div className='position-relative mb-4'>
+							<img
+								src={book.imageLinks?.thumbnail || defaultCover}
+								alt={book.title}
+								className='img-fluid rounded shadow mx-auto'
+								style={{ maxHeight: '400px', width: 'auto' }}
+							/>
+
+							<div className='mt-3'>
+								<div className='d-grid gap-2'>
+									<button
+										onClick={handleToggleFavorite}
+										className={`btn ${
+											isBookmarked ? 'btn-warning' : 'btn-outline-warning'
+										}`}
+									>
+										<i className='fas fa-heart me-2'></i>
+										{isBookmarked ? 'Usuń z ulubionych' : 'Dodaj do ulubionych'}
+									</button>
+
+									<button
+										onClick={handleToggleReadingList}
+										className={`btn ${
+											isInReading ? 'btn-info' : 'btn-outline-info'
+										}`}
+									>
+										<i className='fas fa-book-reader me-2'></i>
+										{isInReading
+											? 'Usuń z listy do przeczytania'
+											: 'Dodaj do przeczytania'}
+									</button>
+								</div>
+							</div>
+						</div>
 
 						<div className='card p-3 bg-light mb-4'>
 							<ul className='list-group list-group-flush'>
@@ -175,6 +248,7 @@ const BookDetail = () => {
 									style={{
 										background:
 											'linear-gradient(90deg, #DA831C 0%, #FFD028 100%)',
+										color: 'white',
 										border: 'none',
 									}}
 								>
@@ -196,6 +270,25 @@ const BookDetail = () => {
 						) : (
 							<p className='text-muted'>Brak opisu dla tej książki.</p>
 						)}
+					</div>
+
+					{/* Dodatkowe informacje/rekomendacje mogłyby być tutaj */}
+					<div className='mt-5'>
+						<h3 className='mb-3'>Udostępnij</h3>
+						<div className='d-flex gap-2'>
+							<button className='btn btn-outline-primary'>
+								<i className='fab fa-facebook-f me-2'></i>
+								Facebook
+							</button>
+							<button className='btn btn-outline-info'>
+								<i className='fab fa-twitter me-2'></i>
+								Twitter
+							</button>
+							<button className='btn btn-outline-danger'>
+								<i className='far fa-envelope me-2'></i>
+								Email
+							</button>
+						</div>
 					</div>
 				</div>
 			</div>
