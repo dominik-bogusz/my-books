@@ -2,7 +2,6 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import supabase from '../lib/supabase';
-import { Book } from '../types/book';
 import BookList from '../components/BookList';
 import useBookActions from '../hooks/useBookActions';
 import useStorage from '../hooks/useStorage';
@@ -18,6 +17,7 @@ const Profile: React.FC = () => {
 		isAuthenticated,
 		logout,
 		updateProfile,
+		deleteAccount,
 		isLoading: authLoading,
 	} = useAuth();
 
@@ -39,6 +39,8 @@ const Profile: React.FC = () => {
 	const [isSaving, setIsSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
+	const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
+	const [isDeleting, setIsDeleting] = useState(false);
 	const fileInputRef = useRef<HTMLInputElement>(null);
 	const navigate = useNavigate();
 	const { uploadAvatar, isUploading } = useStorage();
@@ -75,7 +77,7 @@ const Profile: React.FC = () => {
 					setProfileData({
 						username:
 							user.user_metadata?.username || user.email?.split('@')[0] || '',
-						avatar_url: null,
+						avatar_url: user.user_metadata?.avatar_url || null,
 					});
 				}
 			} catch (error) {
@@ -88,8 +90,6 @@ const Profile: React.FC = () => {
 
 		fetchProfile();
 	}, [user, isAuthenticated, navigate]);
-
-	// Używamy naszego hooka useStorage zamiast własnej implementacji
 
 	const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
 		const files = e.target.files;
@@ -168,6 +168,27 @@ const Profile: React.FC = () => {
 	const handleLogout = async () => {
 		await logout();
 		navigate('/');
+	};
+
+	const handleDeleteAccount = async () => {
+		setIsDeleting(true);
+		setError(null);
+
+		try {
+			const { success, error } = await deleteAccount();
+
+			if (success) {
+				navigate('/');
+			} else {
+				setError(error || 'Wystąpił błąd podczas usuwania konta');
+				setShowDeleteConfirmation(false);
+			}
+		} catch (err) {
+			setError('Nieoczekiwany błąd. Spróbuj ponownie później.');
+			setShowDeleteConfirmation(false);
+		} finally {
+			setIsDeleting(false);
+		}
 	};
 
 	if (authLoading || isLoading) {
@@ -306,6 +327,12 @@ const Profile: React.FC = () => {
 										>
 											Wyloguj się
 										</button>
+										<button
+											className='btn btn-danger'
+											onClick={() => setShowDeleteConfirmation(true)}
+										>
+											Usuń konto
+										</button>
 									</div>
 								</div>
 							)}
@@ -354,6 +381,67 @@ const Profile: React.FC = () => {
 					)}
 				</div>
 			</div>
+
+			{/* Modal potwierdzenia usunięcia konta */}
+			{showDeleteConfirmation && (
+				<div
+					className='modal fade show'
+					style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}
+				>
+					<div className='modal-dialog modal-dialog-centered'>
+						<div className='modal-content'>
+							<div className='modal-header'>
+								<h5 className='modal-title'>Potwierdź usunięcie konta</h5>
+								<button
+									type='button'
+									className='btn-close'
+									onClick={() => setShowDeleteConfirmation(false)}
+									disabled={isDeleting}
+								></button>
+							</div>
+							<div className='modal-body'>
+								<p>
+									Czy na pewno chcesz usunąć swoje konto? Ta operacja jest{' '}
+									<strong>nieodwracalna</strong>.
+								</p>
+								<p>
+									Wszystkie Twoje dane, w tym ulubione książki i lista do
+									przeczytania, zostaną trwale usunięte.
+								</p>
+							</div>
+							<div className='modal-footer'>
+								<button
+									type='button'
+									className='btn btn-secondary'
+									onClick={() => setShowDeleteConfirmation(false)}
+									disabled={isDeleting}
+								>
+									Anuluj
+								</button>
+								<button
+									type='button'
+									className='btn btn-danger'
+									onClick={handleDeleteAccount}
+									disabled={isDeleting}
+								>
+									{isDeleting ? (
+										<>
+											<span
+												className='spinner-border spinner-border-sm me-2'
+												role='status'
+												aria-hidden='true'
+											></span>
+											Usuwanie...
+										</>
+									) : (
+										'Tak, usuń moje konto'
+									)}
+								</button>
+							</div>
+						</div>
+					</div>
+				</div>
+			)}
 		</div>
 	);
 };

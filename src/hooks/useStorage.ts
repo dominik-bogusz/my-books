@@ -50,10 +50,23 @@ const useStorage = (): UseStorageReturn => {
 			const filePath = `avatars/${fileName}`;
 
 			// Najpierw sprawdzamy, czy bucket 'avatars' istnieje
-			const { data: buckets } = await supabase.storage.listBuckets();
+			const { data: buckets, error: bucketsError } =
+				await supabase.storage.listBuckets();
+
+			if (bucketsError) {
+				console.error('Błąd podczas sprawdzania bucketów:', bucketsError);
+				return {
+					url: null,
+					error: 'Nie udało się uzyskać dostępu do przechowywania plików',
+				};
+			}
 
 			// Jeśli bucket 'avatars' nie istnieje, tworzymy go
-			if (!buckets?.find((bucket) => bucket.name === 'avatars')) {
+			const avatarBucketExists = buckets?.some(
+				(bucket) => bucket.name === 'avatars'
+			);
+
+			if (!avatarBucketExists) {
 				const { error: bucketError } = await supabase.storage.createBucket(
 					'avatars',
 					{
@@ -65,9 +78,23 @@ const useStorage = (): UseStorageReturn => {
 					console.error('Błąd podczas tworzenia bucketu:', bucketError);
 					return {
 						url: null,
-						error: 'Błąd podczas przygotowania przechowywania plików',
+						error:
+							'Nie udało się utworzyć przestrzeni do przechowywania plików. Sprawdź konfigurację Supabase.',
 					};
 				}
+			}
+
+			// Ustaw odpowiednie uprawnienia dla bucketa
+			const { error: policiesError } = await supabase.storage
+				.from('avatars')
+				.setPublic(true);
+
+			if (policiesError) {
+				console.error(
+					'Błąd podczas ustawiania uprawnień bucketu:',
+					policiesError
+				);
+				// Kontynuujemy mimo błędu, być może uprawnienia już są prawidłowe
 			}
 
 			// Uploadujemy plik do Supabase Storage
@@ -80,11 +107,21 @@ const useStorage = (): UseStorageReturn => {
 
 			if (uploadError) {
 				console.error('Błąd uploadu:', uploadError);
-				return { url: null, error: 'Wystąpił błąd podczas przesyłania pliku' };
+				return {
+					url: null,
+					error: `Wystąpił błąd podczas przesyłania pliku: ${uploadError.message}`,
+				};
 			}
 
 			// Pobieramy publiczny URL pliku
 			const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+
+			if (!data.publicUrl) {
+				return {
+					url: null,
+					error: 'Nie udało się uzyskać publicznego URL dla przesłanego pliku',
+				};
+			}
 
 			return { url: data.publicUrl, error: null };
 		} catch (error) {
@@ -93,7 +130,7 @@ const useStorage = (): UseStorageReturn => {
 				url: null,
 				error:
 					error instanceof Error
-						? error.message
+						? `Błąd: ${error.message}`
 						: 'Wystąpił nieznany błąd podczas przesyłania pliku',
 			};
 		} finally {
