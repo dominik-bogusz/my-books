@@ -156,18 +156,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 				return { success: false, error: updateError.message };
 			}
 
-			// Update profiles table
-			const { error: profileError } = await supabase
-				.from('profiles')
-				.update(data)
-				.eq('id', user.id);
+			// Create or update profiles table entry
+			const { error: upsertError } = await supabase.from('profiles').upsert(
+				{
+					id: user.id,
+					email: user.email,
+					username:
+						data.username ||
+						user.user_metadata?.username ||
+						user.email?.split('@')[0],
+					avatar_url: data.avatar_url,
+					updated_at: new Date().toISOString(),
+				},
+				{ onConflict: 'id' }
+			);
 
-			if (profileError) {
-				return { success: false, error: profileError.message };
+			if (upsertError) {
+				console.error('Error updating profile in database:', upsertError);
+				return { success: false, error: upsertError.message };
 			}
 
 			return { success: true };
 		} catch (error) {
+			console.error('Unexpected error in updateProfile:', error);
 			return {
 				success: false,
 				error:

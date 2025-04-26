@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import supabase from '../lib/supabase';
 import { Book } from '../types/book';
 import BookList from '../components/BookList';
+import useBookActions from '../hooks/useBookActions';
+import useStorage from '../hooks/useStorage';
 
 interface ProfileData {
 	username: string;
@@ -18,9 +20,17 @@ const Profile: React.FC = () => {
 		updateProfile,
 		isLoading: authLoading,
 	} = useAuth();
+
+	// Używamy bezpośrednio hooka useBookActions do pobierania książek
+	const {
+		favoriteBooks,
+		readingList,
+		loadingFavorites,
+		loadingReadingList,
+		error: booksError,
+	} = useBookActions();
+
 	const [isLoading, setIsLoading] = useState(true);
-	const [favoriteBooks, setFavoriteBooks] = useState<Book[]>([]);
-	const [readingListBooks, setReadingListBooks] = useState<Book[]>([]);
 	const [profileData, setProfileData] = useState<ProfileData>({
 		username: '',
 		avatar_url: null,
@@ -29,16 +39,18 @@ const Profile: React.FC = () => {
 	const [isSaving, setIsSaving] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 	const [successMessage, setSuccessMessage] = useState<string | null>(null);
+	const fileInputRef = useRef<HTMLInputElement>(null);
 	const navigate = useNavigate();
+	const { uploadAvatar, isUploading } = useStorage();
 
-	// Fetch profile data and user's books
+	// Fetch profile data
 	useEffect(() => {
 		if (!isAuthenticated || !user) {
 			navigate('/login');
 			return;
 		}
 
-		const fetchData = async () => {
+		const fetchProfile = async () => {
 			setIsLoading(true);
 			try {
 				// Fetch profile data
@@ -49,58 +61,83 @@ const Profile: React.FC = () => {
 					.single();
 
 				if (profileError) {
-					throw profileError;
+					console.error('Error fetching profile:', profileError);
+					// Nie zwracamy błędu, aby nie blokować ładowania interfejsu
 				}
 
 				if (profileData) {
 					setProfileData({
-						username: profileData.username || '',
+						username: profileData.username || user.email?.split('@')[0] || '',
 						avatar_url: profileData.avatar_url,
 					});
-				}
-
-				// Fetch favorite books
-				const { data: favoritesData, error: favoritesError } = await supabase
-					.from('favorites')
-					.select('book_id, book_data')
-					.eq('user_id', user.id);
-
-				if (favoritesError) {
-					throw favoritesError;
-				}
-
-				if (favoritesData) {
-					const books = favoritesData.map((item) => JSON.parse(item.book_data));
-					setFavoriteBooks(books);
-				}
-
-				// Fetch reading list
-				const { data: readingListData, error: readingListError } =
-					await supabase
-						.from('reading_list')
-						.select('book_id, book_data')
-						.eq('user_id', user.id);
-
-				if (readingListError) {
-					throw readingListError;
-				}
-
-				if (readingListData) {
-					const books = readingListData.map((item) =>
-						JSON.parse(item.book_data)
-					);
-					setReadingListBooks(books);
+				} else {
+					// Jeśli nie ma danych profilu, używamy danych z user
+					setProfileData({
+						username:
+							user.user_metadata?.username || user.email?.split('@')[0] || '',
+						avatar_url: null,
+					});
 				}
 			} catch (error) {
-				console.error('Error fetching profile data:', error);
-				setError('Wystąpił błąd podczas pobierania danych profilu.');
+				console.error('Error in profile fetch:', error);
+				// Nie blokujemy ładowania interfejsu
 			} finally {
 				setIsLoading(false);
 			}
 		};
 
-		fetchData();
+		fetchProfile();
 	}, [user, isAuthenticated, navigate]);
+
+	// Używamy naszego hooka useStorage zamiast własnej implementacji
+
+	const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+		const files = e.target.files;
+		if (!files || files.length === 0) return;
+
+		const file = files[0];
+
+		setError(null);
+		setSuccessMessage(null);
+		setIsSaving(true);
+
+		try {
+			// Używamy funkcji z hooka useStorage
+			const { url, error: uploadError } = await uploadAvatar(file);
+
+			if (uploadError) {
+				setError(uploadError);
+				return;
+			}
+
+			if (url) {
+				// Aktualizujemy dane profilu
+				setProfileData({
+					...profileData,
+					avatar_url: url,
+				});
+
+				// Zapisujemy zmiany w profilu
+				const { success, error: updateError } = await updateProfile({
+					username: profileData.username,
+					avatar_url: url,
+				});
+
+				if (success) {
+					setSuccessMessage('Zdjęcie zostało zaktualizowane i zapisane');
+				} else if (updateError) {
+					setError(
+						`Zdjęcie zostało przesłane, ale nie udało się zaktualizować profilu: ${updateError}`
+					);
+				}
+			}
+		} catch (error) {
+			console.error('Error handling file:', error);
+			setError('Wystąpił nieoczekiwany błąd podczas przesyłania zdjęcia.');
+		} finally {
+			setIsSaving(false);
+		}
+	};
 
 	const handleSaveProfile = async () => {
 		if (!user) return;
@@ -179,6 +216,26 @@ const Profile: React.FC = () => {
 										</span>
 									</div>
 								)}
+
+								{/* Zawsze pokazujemy możliwość zmiany zdjęcia */}
+								<div className='mt-2'>
+									<input
+										type='file'
+										accept='image/*'
+										ref={fileInputRef}
+										onChange={handleFileChange}
+										style={{ display: 'none' }}
+									/>
+									<button
+										className='btn btn-sm btn-outline-secondary'
+										onClick={() => fileInputRef.current?.click()}
+										disabled={isSaving || isUploading}
+									>
+										{isSaving || isUploading
+											? 'Przesyłanie...'
+											: 'Zmień zdjęcie'}
+									</button>
+								</div>
 							</div>
 
 							{isEditing ? (
@@ -199,25 +256,6 @@ const Profile: React.FC = () => {
 													username: e.target.value,
 												})
 											}
-										/>
-									</div>
-
-									<div className='mb-3'>
-										<label htmlFor='avatar' className='form-label'>
-											URL Avatara
-										</label>
-										<input
-											type='text'
-											className='form-control'
-											id='avatar'
-											value={profileData.avatar_url || ''}
-											onChange={(e) =>
-												setProfileData({
-													...profileData,
-													avatar_url: e.target.value,
-												})
-											}
-											placeholder='https://example.com/avatar.jpg'
 										/>
 									</div>
 
@@ -293,6 +331,7 @@ const Profile: React.FC = () => {
 						<h2 className='mb-4'>Ulubione książki</h2>
 						<BookList
 							books={favoriteBooks}
+							isLoading={loadingFavorites}
 							emptyMessage='Nie masz jeszcze ulubionych książek. Dodaj je podczas przeglądania książek.'
 						/>
 					</div>
@@ -301,10 +340,18 @@ const Profile: React.FC = () => {
 					<div>
 						<h2 className='mb-4'>Do przeczytania</h2>
 						<BookList
-							books={readingListBooks}
+							books={readingList}
+							isLoading={loadingReadingList}
 							emptyMessage='Twoja lista do przeczytania jest pusta. Dodaj książki, które chcesz przeczytać.'
 						/>
 					</div>
+
+					{booksError && (
+						<div className='alert alert-warning mt-3' role='alert'>
+							<i className='fas fa-exclamation-triangle me-2'></i>
+							{booksError}
+						</div>
+					)}
 				</div>
 			</div>
 		</div>

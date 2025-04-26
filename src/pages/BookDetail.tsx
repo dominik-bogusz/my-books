@@ -11,6 +11,7 @@ const BookDetail = () => {
 	const [book, setBook] = useState<Book | null>(null);
 	const [isLoading, setIsLoading] = useState(true);
 	const [error, setError] = useState<string | null>(null);
+	const [isProcessing, setIsProcessing] = useState(false);
 	const { isAuthenticated } = useAuth();
 	const {
 		isFavorite,
@@ -19,6 +20,7 @@ const BookDetail = () => {
 		removeFromFavorites,
 		addToReadingList,
 		removeFromReadingList,
+		refreshUserBooks,
 	} = useBookActions();
 	const navigate = useNavigate();
 	const { currentQuery } = useSearch();
@@ -71,10 +73,21 @@ const BookDetail = () => {
 			return;
 		}
 
-		if (isFavorite(book.id)) {
-			await removeFromFavorites(book.id);
-		} else {
-			await addToFavorites(book);
+		try {
+			setIsProcessing(true);
+
+			if (isFavorite(book.id)) {
+				await removeFromFavorites(book.id);
+			} else {
+				await addToFavorites(book);
+			}
+
+			// Odświeżamy listę książek użytkownika
+			await refreshUserBooks();
+		} catch (error) {
+			console.error('Error toggling favorite:', error);
+		} finally {
+			setIsProcessing(false);
 		}
 	};
 
@@ -86,10 +99,21 @@ const BookDetail = () => {
 			return;
 		}
 
-		if (isInReadingList(book.id)) {
-			await removeFromReadingList(book.id);
-		} else {
-			await addToReadingList(book);
+		try {
+			setIsProcessing(true);
+
+			if (isInReadingList(book.id)) {
+				await removeFromReadingList(book.id);
+			} else {
+				await addToReadingList(book);
+			}
+
+			// Odświeżamy listę książek użytkownika
+			await refreshUserBooks();
+		} catch (error) {
+			console.error('Error toggling reading list:', error);
+		} finally {
+			setIsProcessing(false);
 		}
 	};
 
@@ -198,8 +222,17 @@ const BookDetail = () => {
 												className={`btn ${
 													isBookmarked ? 'btn-warning' : 'btn-outline-warning'
 												}`}
+												disabled={isProcessing}
 											>
-												<i className='fas fa-heart me-2'></i>
+												{isProcessing && isBookmarked ? (
+													<span
+														className='spinner-border spinner-border-sm me-2'
+														role='status'
+														aria-hidden='true'
+													></span>
+												) : (
+													<i className='fas fa-heart me-2'></i>
+												)}
 												{isBookmarked
 													? 'Usuń z ulubionych'
 													: 'Dodaj do ulubionych'}
@@ -210,8 +243,17 @@ const BookDetail = () => {
 												className={`btn ${
 													isInReading ? 'btn-info' : 'btn-outline-info'
 												}`}
+												disabled={isProcessing}
 											>
-												<i className='fas fa-book-reader me-2'></i>
+												{isProcessing && isInReading ? (
+													<span
+														className='spinner-border spinner-border-sm me-2'
+														role='status'
+														aria-hidden='true'
+													></span>
+												) : (
+													<i className='fas fa-book-reader me-2'></i>
+												)}
 												{isInReading
 													? 'Usuń z listy do przeczytania'
 													: 'Dodaj do przeczytania'}

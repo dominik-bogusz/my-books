@@ -19,8 +19,10 @@ const BookActions: React.FC<BookActionsProps> = ({ book, size = 'md' }) => {
 		removeFromFavorites,
 		addToReadingList,
 		removeFromReadingList,
+		refreshUserBooks, // Nowa funkcja, którą stworzyliśmy
 	} = useBookActions();
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+	const [isProcessing, setIsProcessing] = useState(false);
 
 	const toggleDropdown = () => {
 		setIsDropdownOpen(!isDropdownOpen);
@@ -35,10 +37,22 @@ const BookActions: React.FC<BookActionsProps> = ({ book, size = 'md' }) => {
 			return;
 		}
 
-		if (isFavorite(book.id)) {
-			await removeFromFavorites(book.id);
-		} else {
-			await addToFavorites(book);
+		try {
+			setIsProcessing(true);
+
+			if (isFavorite(book.id)) {
+				await removeFromFavorites(book.id);
+			} else {
+				await addToFavorites(book);
+			}
+
+			// Odświeżamy listę książek użytkownika, żeby pojawiła się w profilu
+			await refreshUserBooks();
+		} catch (error) {
+			console.error('Error managing favorites:', error);
+		} finally {
+			setIsProcessing(false);
+			setIsDropdownOpen(false); // Zamykamy dropdown po akcji
 		}
 	};
 
@@ -51,10 +65,22 @@ const BookActions: React.FC<BookActionsProps> = ({ book, size = 'md' }) => {
 			return;
 		}
 
-		if (isInReadingList(book.id)) {
-			await removeFromReadingList(book.id);
-		} else {
-			await addToReadingList(book);
+		try {
+			setIsProcessing(true);
+
+			if (isInReadingList(book.id)) {
+				await removeFromReadingList(book.id);
+			} else {
+				await addToReadingList(book);
+			}
+
+			// Odświeżamy listę książek użytkownika, żeby pojawiła się w profilu
+			await refreshUserBooks();
+		} catch (error) {
+			console.error('Error managing reading list:', error);
+		} finally {
+			setIsProcessing(false);
+			setIsDropdownOpen(false); // Zamykamy dropdown po akcji
 		}
 	};
 
@@ -88,8 +114,17 @@ const BookActions: React.FC<BookActionsProps> = ({ book, size = 'md' }) => {
 				type='button'
 				onClick={toggleDropdown}
 				aria-expanded={isDropdownOpen}
+				disabled={isProcessing}
 			>
-				<i className={`fas fa-ellipsis-v ${getIconSize()}`}></i>
+				{isProcessing ? (
+					<span
+						className='spinner-border spinner-border-sm'
+						role='status'
+						aria-hidden='true'
+					></span>
+				) : (
+					<i className={`fas fa-ellipsis-v ${getIconSize()}`}></i>
+				)}
 			</button>
 			<ul
 				className={`dropdown-menu dropdown-menu-end ${
@@ -102,6 +137,7 @@ const BookActions: React.FC<BookActionsProps> = ({ book, size = 'md' }) => {
 							<button
 								className='dropdown-item d-flex align-items-center'
 								onClick={handleFavoriteClick}
+								disabled={isProcessing}
 							>
 								<i
 									className={`${
@@ -117,6 +153,7 @@ const BookActions: React.FC<BookActionsProps> = ({ book, size = 'md' }) => {
 							<button
 								className='dropdown-item d-flex align-items-center'
 								onClick={handleReadingListClick}
+								disabled={isProcessing}
 							>
 								<i
 									className={`${
