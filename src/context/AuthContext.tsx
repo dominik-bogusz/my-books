@@ -63,13 +63,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 	const login = async (email: string, password: string) => {
 		try {
 			setIsLoading(true);
-			const { error } = await supabase.auth.signInWithPassword({
+			const { data, error } = await supabase.auth.signInWithPassword({
 				email,
 				password,
 			});
 
 			if (error) {
 				return { success: false, error: error.message };
+			}
+
+			// Sprawdź, czy konto jest oznaczone jako usunięte
+			if (
+				data.user &&
+				data.user.user_metadata &&
+				data.user.user_metadata.account_status === 'deleted'
+			) {
+				// Jeśli konto jest oznaczone jako usunięte, wyloguj użytkownika i zwróć błąd
+				await supabase.auth.signOut();
+				return {
+					success: false,
+					error:
+						'To konto zostało usunięte. Jeśli chcesz utworzyć nowe konto, użyj funkcji rejestracji.',
+				};
 			}
 
 			return { success: true };
@@ -92,7 +107,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 		try {
 			setIsLoading(true);
 
-			// Sign up new user
+			// Sprawdź, czy konto z tym adresem email już istnieje
+			const { error: signInError, data: signInData } =
+				await supabase.auth.signInWithOtp({
+					email,
+					options: {
+						shouldCreateUser: false, // Nie tworzymy użytkownika, tylko sprawdzamy czy istnieje
+					},
+				});
+
+			// Jeśli mamy błąd inny niż "User not found", zwróć go
+			if (signInError && !signInError.message.includes('User not found')) {
+				return { success: false, error: signInError.message };
+			}
+
+			// Jeśli użytkownik istnieje i ma status deleted, usuń zablokowaną rejestrację tego konta
+			// To najbliższe co możemy zrobić bez API backendu - wysyłamy link do resetowania hasła
+			if (signInData && !signInError) {
+				const { data: userData, error: userError } =
+					await supabase.auth.admin.getUserById(signInData.user?.id || '');
+
+				if (userData?.user?.user_metadata?.account_status === 'deleted') {
+					// To konto zostało wcześniej usunięte - możemy wysłać email z resetem hasła
+					// Zazwyczaj potrzebujemy administratorskiego API, ale dla celów testowych
+					// możemy wysłać reset hasła, co pozwoli użytkownikowi na ponowne używanie adresu email
+
+					const { error: resetError } =
+						await supabase.auth.resetPasswordForEmail(email);
+					if (resetError) {
+						console.error('Nie udało się zresetować hasła:', resetError);
+						// Kontynuujemy mimo to, próbując normalnej rejestracji
+					}
+				}
+			}
+
+			// Zwykła rejestracja
 			const { error: signUpError, data } = await supabase.auth.signUp({
 				email,
 				password,
@@ -104,6 +153,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 			});
 
 			if (signUpError) {
+				// Jeśli błąd to "User already registered", możemy spróbować ponownie z nowym hasłem
+				if (
+					signUpError.message.includes('already registered') ||
+					signUpError.message.includes('already exists')
+				) {
+					const { error: resetPwdError } =
+						await supabase.auth.resetPasswordForEmail(email);
+
+					if (resetPwdError) {
+						return {
+							success: false,
+							error:
+								'Ten adres email jest już używany i nie można go ponownie zarejestrować.',
+						};
+					}
+
+					return {
+						success: false,
+						error:
+							'Ten adres email jest już używany. Sprawdź swoją skrzynkę email, aby zresetować hasło i ponownie aktywować konto.',
+					};
+				}
+
 				return { success: false, error: signUpError.message };
 			}
 
@@ -257,11 +329,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 				// Continue with user deletion even if avatar deletion fails
 			}
 
-			// 5. Używamy tylko standardowego API zamiast admin.deleteUser
-			// Oznaczymy konto jako usunięte w metadanych użytkownika
+			// 5. Set the account_status to 'deleted' in user metadata
 			const { error: updateError } = await supabase.auth.updateUser({
 				data: {
-					deleted: true,
+					account_status: 'deleted',
 					deleted_at: new Date().toISOString(),
 				},
 			});
@@ -271,6 +342,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 					success: false,
 					error: `Nie udało się usunąć konta: ${updateError.message}`,
 				};
+			}
+
+			// 6. Change password to a random string to prevent login
+			const randomPassword =
+				Math.random().toString(36).slice(2) +
+				Math.random().toString(36).slice(2) +
+				Math.random().toString(36).slice(2);
+
+			const { error: passwordUpdateError } = await supabase.auth.updateUser({
+				password: randomPassword,
+			});
+
+			if (passwordUpdateError) {
+				console.error(
+					'Error updating password during account deletion:',
+					passwordUpdateError
+				);
+				// Still consider deletion successful even if password change fails
 			}
 
 			// Log out the user
