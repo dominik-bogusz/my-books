@@ -96,34 +96,73 @@ const BookActions: React.FC<BookActionsProps> = ({ book, size = 'md' }) => {
 					isDropdownOpen ? 'show' : ''
 				}`}
 			>
-				<li>
-					<button
-						className='dropdown-item d-flex align-items-center'
-						onClick={handleFavoriteClick}
-					>
-						<i
-							className={`${
-								isFavorite(book.id) ? 'fas' : 'far'
-							} fa-heart me-2 text-danger`}
-						></i>
-						{isFavorite(book.id) ? 'Usuń z ulubionych' : 'Dodaj do ulubionych'}
-					</button>
-				</li>
-				<li>
-					<button
-						className='dropdown-item d-flex align-items-center'
-						onClick={handleReadingListClick}
-					>
-						<i
-							className={`${
-								isInReadingList(book.id) ? 'fas' : 'far'
-							} fa-bookmark me-2 text-primary`}
-						></i>
-						{isInReadingList(book.id)
-							? 'Usuń z listy do przeczytania'
-							: 'Dodaj do przeczytania'}
-					</button>
-				</li>
+				{isAuthenticated ? (
+					<>
+						<li>
+							<button
+								className='dropdown-item d-flex align-items-center'
+								onClick={handleFavoriteClick}
+							>
+								<i
+									className={`${
+										isFavorite(book.id) ? 'fas' : 'far'
+									} fa-heart me-2 text-danger`}
+								></i>
+								{isFavorite(book.id)
+									? 'Usuń z ulubionych'
+									: 'Dodaj do ulubionych'}
+							</button>
+						</li>
+						<li>
+							<button
+								className='dropdown-item d-flex align-items-center'
+								onClick={handleReadingListClick}
+							>
+								<i
+									className={`${
+										isInReadingList(book.id) ? 'fas' : 'far'
+									} fa-bookmark me-2 text-primary`}
+								></i>
+								{isInReadingList(book.id)
+									? 'Usuń z listy do przeczytania'
+									: 'Dodaj do przeczytania'}
+							</button>
+						</li>
+					</>
+				) : (
+					<>
+						<li>
+							<button
+								className='dropdown-item d-flex align-items-center'
+								onClick={(e) => {
+									e.stopPropagation();
+									e.preventDefault();
+									navigate('/login', {
+										state: { from: { pathname: `/book/${book.id}` } },
+									});
+								}}
+							>
+								<i className='far fa-heart me-2 text-danger'></i>
+								Zaloguj się, aby dodać do ulubionych
+							</button>
+						</li>
+						<li>
+							<button
+								className='dropdown-item d-flex align-items-center'
+								onClick={(e) => {
+									e.stopPropagation();
+									e.preventDefault();
+									navigate('/login', {
+										state: { from: { pathname: `/book/${book.id}` } },
+									});
+								}}
+							>
+								<i className='far fa-bookmark me-2 text-primary'></i>
+								Zaloguj się, aby dodać do przeczytania
+							</button>
+						</li>
+					</>
+				)}
 			</ul>
 		</div>
 	);

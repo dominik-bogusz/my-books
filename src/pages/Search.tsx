@@ -1,34 +1,43 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import useSearch from '../hooks/useSearch';
 import BookList from '../components/BookList';
+import { useSearch } from '../context/SearchContext';
 
 const Search = () => {
 	const location = useLocation();
 	const queryParams = new URLSearchParams(location.search);
 	const query = queryParams.get('q') || '';
 
-	const [searchTerm, setSearchTerm] = useState(query);
-	const [currentPage, setCurrentPage] = useState(1);
-	const [resultsPerPage] = useState(20);
+	const {
+		books,
+		isLoading,
+		error,
+		totalResults,
+		search,
+		currentQuery,
+		currentPage,
+		setCurrentPage,
+	} = useSearch();
 
-	const { books, isLoading, error, totalResults, search } = useSearch();
+	const resultsPerPage = 20;
 
 	useEffect(() => {
-		if (query) {
+		if (query && query !== currentQuery) {
 			// Reset to page 1 when query changes
 			setCurrentPage(1);
-			setSearchTerm(query);
 			search(query, 0);
+		} else if (query && books.length === 0) {
+			// If there's a query but no books (e.g., on first load), perform search
+			search(query, (currentPage - 1) * resultsPerPage);
 		}
-	}, [query, search]);
+	}, [query, search, currentQuery, books.length, currentPage, setCurrentPage]);
 
 	// Pagination handlers
 	const handleNextPage = () => {
 		if (currentPage * resultsPerPage < totalResults) {
 			const nextPage = currentPage + 1;
 			setCurrentPage(nextPage);
-			search(searchTerm, (nextPage - 1) * resultsPerPage);
+			search(currentQuery, (nextPage - 1) * resultsPerPage);
 
 			// Scroll to top of results
 			window.scrollTo({
@@ -42,7 +51,7 @@ const Search = () => {
 		if (currentPage > 1) {
 			const prevPage = currentPage - 1;
 			setCurrentPage(prevPage);
-			search(searchTerm, (prevPage - 1) * resultsPerPage);
+			search(currentQuery, (prevPage - 1) * resultsPerPage);
 
 			// Scroll to top of results
 			window.scrollTo({
@@ -52,12 +61,15 @@ const Search = () => {
 		}
 	};
 
+	// Use currentQuery from context (which persists) instead of local state
+	const displayQuery = currentQuery || query;
+
 	return (
 		<div className='container py-4'>
 			<div className='d-flex justify-content-between align-items-center mb-4'>
 				<h3>
 					Wyniki wyszukiwania dla:{' '}
-					<span className='text-primary'>"{searchTerm}"</span>
+					<span className='text-primary'>"{displayQuery}"</span>
 				</h3>
 			</div>
 
@@ -71,7 +83,7 @@ const Search = () => {
 			<BookList
 				books={books}
 				isLoading={isLoading}
-				emptyMessage={`Brak wyników dla "${searchTerm}". Spróbuj innego zapytania.`}
+				emptyMessage={`Brak wyników dla "${displayQuery}". Spróbuj innego zapytania.`}
 			/>
 
 			{/* Pagination */}

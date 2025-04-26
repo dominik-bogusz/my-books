@@ -2,9 +2,9 @@ import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { getBookById } from '../api/googleBooks';
 import { Book } from '../types/book';
-import BookActions from '../components/BookActions';
 import { useAuth } from '../context/AuthContext';
 import { useBookActions } from '../hooks/useBookActions';
+import { useSearch } from '../context/SearchContext';
 
 const BookDetail = () => {
 	const { id } = useParams<{ id: string }>();
@@ -21,6 +21,7 @@ const BookDetail = () => {
 		removeFromReadingList,
 	} = useBookActions();
 	const navigate = useNavigate();
+	const { currentQuery } = useSearch();
 
 	useEffect(() => {
 		const fetchBookDetails = async () => {
@@ -92,6 +93,33 @@ const BookDetail = () => {
 		}
 	};
 
+	// Determine where to go back to
+	const getBackLink = () => {
+		// If we have a current search query, link back to search results
+		if (currentQuery) {
+			return '/search';
+		}
+		// Otherwise, default to home page
+		return '/';
+	};
+
+	const getBackLinkText = () => {
+		if (currentQuery) {
+			return (
+				<>
+					<i className='fas fa-arrow-left me-2'></i>
+					Powrót do wyników
+				</>
+			);
+		}
+		return (
+			<>
+				<i className='fas fa-home me-2'></i>
+				Strona główna
+			</>
+		);
+	};
+
 	if (isLoading) {
 		return (
 			<div
@@ -145,9 +173,8 @@ const BookDetail = () => {
 	return (
 		<div className='container py-4'>
 			<div className='mb-4'>
-				<Link to='/search' className='btn btn-outline-primary'>
-					<i className='fas fa-arrow-left me-2'></i>
-					Powrót do wyników
+				<Link to={getBackLink()} className='btn btn-outline-primary'>
+					{getBackLinkText()}
 				</Link>
 			</div>
 
@@ -164,27 +191,59 @@ const BookDetail = () => {
 
 							<div className='mt-3'>
 								<div className='d-grid gap-2'>
-									<button
-										onClick={handleToggleFavorite}
-										className={`btn ${
-											isBookmarked ? 'btn-warning' : 'btn-outline-warning'
-										}`}
-									>
-										<i className='fas fa-heart me-2'></i>
-										{isBookmarked ? 'Usuń z ulubionych' : 'Dodaj do ulubionych'}
-									</button>
+									{isAuthenticated ? (
+										<>
+											<button
+												onClick={handleToggleFavorite}
+												className={`btn ${
+													isBookmarked ? 'btn-warning' : 'btn-outline-warning'
+												}`}
+											>
+												<i className='fas fa-heart me-2'></i>
+												{isBookmarked
+													? 'Usuń z ulubionych'
+													: 'Dodaj do ulubionych'}
+											</button>
 
-									<button
-										onClick={handleToggleReadingList}
-										className={`btn ${
-											isInReading ? 'btn-info' : 'btn-outline-info'
-										}`}
-									>
-										<i className='fas fa-book-reader me-2'></i>
-										{isInReading
-											? 'Usuń z listy do przeczytania'
-											: 'Dodaj do przeczytania'}
-									</button>
+											<button
+												onClick={handleToggleReadingList}
+												className={`btn ${
+													isInReading ? 'btn-info' : 'btn-outline-info'
+												}`}
+											>
+												<i className='fas fa-book-reader me-2'></i>
+												{isInReading
+													? 'Usuń z listy do przeczytania'
+													: 'Dodaj do przeczytania'}
+											</button>
+										</>
+									) : (
+										<>
+											<button
+												onClick={() =>
+													navigate('/login', {
+														state: { from: { pathname: `/book/${id}` } },
+													})
+												}
+												className='btn btn-outline-warning'
+											>
+												<i className='fas fa-heart me-2'></i>
+												Zaloguj się, aby dodać do ulubionych
+											</button>
+
+											<button
+												onClick={() =>
+													navigate('/login', {
+														state: { from: { pathname: `/book/${id}` } },
+													})
+												}
+												className='btn btn-outline-info'
+											>
+												<i className='fas fa-book-reader me-2'></i>
+												Zaloguj się, aby dodać do przeczytania
+											</button>
+										</>
+									)}
 								</div>
 							</div>
 						</div>

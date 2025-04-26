@@ -1,15 +1,19 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useSearch } from '../context/SearchContext';
 
 const Navbar = () => {
 	const [searchQuery, setSearchQuery] = useState('');
 	const navigate = useNavigate();
 	const { isAuthenticated, user, logout } = useAuth();
+	const { clearSearch } = useSearch();
 
 	const handleSearch = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (searchQuery.trim()) {
+			// Clear previous search results when performing a new search
+			clearSearch();
 			navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
 		}
 	};
@@ -19,10 +23,19 @@ const Navbar = () => {
 		navigate('/');
 	};
 
+	const handleHomeClick = () => {
+		// Clear search when navigating to home
+		clearSearch();
+	};
+
 	return (
 		<nav className='navbar navbar-expand-lg navbar-light bg-white shadow-sm py-4'>
 			<div className='container'>
-				<Link to='/' className='navbar-brand d-flex align-items-center fw-bold'>
+				<Link
+					to='/'
+					className='navbar-brand d-flex align-items-center fw-bold'
+					onClick={handleHomeClick}
+				>
 					<img
 						src='/book-logo.svg'
 						alt='Logo'
