@@ -138,7 +138,7 @@ const BookDetail = () => {
 		);
 	}
 
-	const defaultCover = 'https://via.placeholder.com/300x450?text=Brak+Okładki';
+	const defaultCover = 'https://placehold.co/128x192/e0e0e0/gray?text=No+Cover';
 	const isBookmarked = isFavorite(book.id);
 	const isInReading = isInReadingList(book.id);
 
@@ -270,25 +270,6 @@ const BookDetail = () => {
 						) : (
 							<p className='text-muted'>Brak opisu dla tej książki.</p>
 						)}
-					</div>
-
-					{/* Dodatkowe informacje/rekomendacje mogłyby być tutaj */}
-					<div className='mt-5'>
-						<h3 className='mb-3'>Udostępnij</h3>
-						<div className='d-flex gap-2'>
-							<button className='btn btn-outline-primary'>
-								<i className='fab fa-facebook-f me-2'></i>
-								Facebook
-							</button>
-							<button className='btn btn-outline-info'>
-								<i className='fab fa-twitter me-2'></i>
-								Twitter
-							</button>
-							<button className='btn btn-outline-danger'>
-								<i className='far fa-envelope me-2'></i>
-								Email
-							</button>
-						</div>
 					</div>
 				</div>
 			</div>

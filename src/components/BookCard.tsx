@@ -7,7 +7,7 @@ interface BookCardProps {
 }
 
 const BookCard: React.FC<BookCardProps> = ({ book }) => {
-	const defaultCover = 'https://via.placeholder.com/128x192?text=Brak+Okładki';
+	const defaultCover = 'https://placehold.co/128x192/e0e0e0/gray?text=No+Cover';
 
 	// Utnij za długi opis
 	const truncateDescription = (text?: string, length: number = 150) => {
