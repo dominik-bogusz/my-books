@@ -60,11 +60,11 @@ const Profile: React.FC = () => {
 					.from('profiles')
 					.select('*')
 					.eq('id', user.id)
-					.single();
+					.maybeSingle(); // Use maybeSingle() instead of single() to prevent errors when no record exists
 
-				if (profileError) {
+				if (profileError && !profileError.message.includes('contains 0 rows')) {
 					console.error('Error fetching profile:', profileError);
-					// Nie zwracamy błędu, aby nie blokować ładowania interfejsu
+					// Log error but continue loading the interface
 				}
 
 				if (profileData) {
@@ -73,16 +73,32 @@ const Profile: React.FC = () => {
 						avatar_url: profileData.avatar_url,
 					});
 				} else {
-					// Jeśli nie ma danych profilu, używamy danych z user
+					// If profile doesn't exist in database, use data from auth user metadata
+					// and create a profile record
+					const defaultUsername =
+						user.user_metadata?.username || user.email?.split('@')[0] || '';
 					setProfileData({
-						username:
-							user.user_metadata?.username || user.email?.split('@')[0] || '',
+						username: defaultUsername,
 						avatar_url: user.user_metadata?.avatar_url || null,
 					});
+
+					// Create profile record if it doesn't exist
+					const { error: insertError } = await supabase
+						.from('profiles')
+						.insert({
+							id: user.id,
+							email: user.email,
+							username: defaultUsername,
+							avatar_url: user.user_metadata?.avatar_url || null,
+						});
+
+					if (insertError) {
+						console.error('Error creating profile:', insertError);
+					}
 				}
 			} catch (error) {
 				console.error('Error in profile fetch:', error);
-				// Nie blokujemy ładowania interfejsu
+				// Don't block the interface loading
 			} finally {
 				setIsLoading(false);
 			}
