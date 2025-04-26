@@ -257,27 +257,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 				// Continue with user deletion even if avatar deletion fails
 			}
 
-			// 5. Finally delete user account
-			const { error: deleteError } = await supabase.auth.admin.deleteUser(
-				user.id
-			);
+			// 5. Używamy tylko standardowego API zamiast admin.deleteUser
+			// Oznaczymy konto jako usunięte w metadanych użytkownika
+			const { error: updateError } = await supabase.auth.updateUser({
+				data: {
+					deleted: true,
+					deleted_at: new Date().toISOString(),
+				},
+			});
 
-			// If admin API fails, try regular delete
-			if (deleteError) {
-				console.error(
-					'Admin delete failed, trying regular delete:',
-					deleteError
-				);
-				const { error: regularDeleteError } = await supabase.auth.updateUser({
-					data: { deleted: true },
-				});
-
-				if (regularDeleteError) {
-					return {
-						success: false,
-						error: `Nie udało się usunąć konta: ${regularDeleteError.message}`,
-					};
-				}
+			if (updateError) {
+				return {
+					success: false,
+					error: `Nie udało się usunąć konta: ${updateError.message}`,
+				};
 			}
 
 			// Log out the user

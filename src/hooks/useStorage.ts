@@ -49,55 +49,8 @@ const useStorage = (): UseStorageReturn => {
 				.substring(2)}.${fileExt}`;
 			const filePath = `avatars/${fileName}`;
 
-			// Najpierw sprawdzamy, czy bucket 'avatars' istnieje
-			const { data: buckets, error: bucketsError } =
-				await supabase.storage.listBuckets();
-
-			if (bucketsError) {
-				console.error('Błąd podczas sprawdzania bucketów:', bucketsError);
-				return {
-					url: null,
-					error: 'Nie udało się uzyskać dostępu do przechowywania plików',
-				};
-			}
-
-			// Jeśli bucket 'avatars' nie istnieje, tworzymy go
-			const avatarBucketExists = buckets?.some(
-				(bucket) => bucket.name === 'avatars'
-			);
-
-			if (!avatarBucketExists) {
-				const { error: bucketError } = await supabase.storage.createBucket(
-					'avatars',
-					{
-						public: true, // Ustaw jako publiczny, aby mieć dostęp do URL obrazów
-					}
-				);
-
-				if (bucketError) {
-					console.error('Błąd podczas tworzenia bucketu:', bucketError);
-					return {
-						url: null,
-						error:
-							'Nie udało się utworzyć przestrzeni do przechowywania plików. Sprawdź konfigurację Supabase.',
-					};
-				}
-			}
-
-			// Ustaw odpowiednie uprawnienia dla bucketa
-			const { error: policiesError } = await supabase.storage
-				.from('avatars')
-				.setPublic(true);
-
-			if (policiesError) {
-				console.error(
-					'Błąd podczas ustawiania uprawnień bucketu:',
-					policiesError
-				);
-				// Kontynuujemy mimo błędu, być może uprawnienia już są prawidłowe
-			}
-
 			// Uploadujemy plik do Supabase Storage
+			// Zakładamy, że bucket 'avatars' już istnieje
 			const { error: uploadError } = await supabase.storage
 				.from('avatars')
 				.upload(filePath, file, {
