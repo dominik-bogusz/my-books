@@ -63,7 +63,7 @@ const Profile: React.FC = () => {
 					.maybeSingle(); // Use maybeSingle() instead of single() to prevent errors when no record exists
 
 				if (profileError && !profileError.message.includes('contains 0 rows')) {
-					console.error('Error fetching profile:', profileError);
+					console.error('Błąd podczas pobierania profilu:', profileError);
 					// Log error but continue loading the interface
 				}
 
@@ -93,11 +93,11 @@ const Profile: React.FC = () => {
 						});
 
 					if (insertError) {
-						console.error('Error creating profile:', insertError);
+						console.error('Błąd podczas tworzenia profilu:', insertError);
 					}
 				}
 			} catch (error) {
-				console.error('Error in profile fetch:', error);
+				console.error('Błąd w pobieraniu profilu:', error);
 				// Don't block the interface loading
 			} finally {
 				setIsLoading(false);
@@ -148,7 +148,7 @@ const Profile: React.FC = () => {
 				}
 			}
 		} catch (error) {
-			console.error('Error handling file:', error);
+			console.error('Błąd podczas obsługi pliku:', error);
 			setError('Wystąpił nieoczekiwany błąd podczas przesyłania zdjęcia.');
 		} finally {
 			setIsSaving(false);
