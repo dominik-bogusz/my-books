@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useSearch } from '../context/SearchContext';
+import NotificationsDropdown from './NotificationsDropdown';
 
 const Navbar = () => {
 	const [searchQuery, setSearchQuery] = useState('');
@@ -87,47 +88,68 @@ const Navbar = () => {
 
 					<div className='ms-auto d-flex align-items-center'>
 						{isAuthenticated ? (
-							<div className='dropdown'>
-								<button
-									className='btn btn-link text-dark dropdown-toggle text-decoration-none d-flex align-items-center'
-									type='button'
-									id='userDropdown'
-									data-bs-toggle='dropdown'
-									aria-expanded='false'
-								>
-									<div
-										className='me-2 rounded-circle bg-light d-flex align-items-center justify-content-center'
-										style={{ width: '32px', height: '32px' }}
+							<div className='d-flex align-items-center'>
+								{/* Powiadomienia */}
+								<div className='me-3'>
+									<NotificationsDropdown />
+								</div>
+
+								<div className='dropdown'>
+									<button
+										className='btn btn-link text-dark dropdown-toggle text-decoration-none d-flex align-items-center'
+										type='button'
+										id='userDropdown'
+										data-bs-toggle='dropdown'
+										aria-expanded='false'
 									>
-										<span>
-											{user?.user_metadata?.username?.[0]?.toUpperCase() ||
-												user?.email?.[0]?.toUpperCase() ||
-												'U'}
+										<div
+											className='me-2 rounded-circle bg-light d-flex align-items-center justify-content-center'
+											style={{ width: '32px', height: '32px' }}
+										>
+											<span>
+												{user?.user_metadata?.username?.[0]?.toUpperCase() ||
+													user?.email?.[0]?.toUpperCase() ||
+													'U'}
+											</span>
+										</div>
+										<span className='d-none d-sm-inline'>
+											{user?.user_metadata?.username ||
+												user?.email?.split('@')[0]}
 										</span>
-									</div>
-									<span className='d-none d-sm-inline'>
-										{user?.user_metadata?.username ||
-											user?.email?.split('@')[0]}
-									</span>
-								</button>
-								<ul
-									className='dropdown-menu dropdown-menu-end'
-									aria-labelledby='userDropdown'
-								>
-									<li>
-										<Link className='dropdown-item' to='/profile'>
-											Mój profil
-										</Link>
-									</li>
-									<li>
-										<hr className='dropdown-divider' />
-									</li>
-									<li>
-										<button className='dropdown-item' onClick={handleLogout}>
-											Wyloguj się
-										</button>
-									</li>
-								</ul>
+									</button>
+									<ul
+										className='dropdown-menu dropdown-menu-end'
+										aria-labelledby='userDropdown'
+									>
+										<li>
+											<Link className='dropdown-item' to='/profile'>
+												<i className='fas fa-user me-2'></i>
+												Mój profil
+											</Link>
+										</li>
+										<li>
+											<Link className='dropdown-item' to='/reading-stats'>
+												<i className='fas fa-chart-bar me-2'></i>
+												Statystyki czytelnicze
+											</Link>
+										</li>
+										<li>
+											<Link className='dropdown-item' to={`/user/${user?.id}`}>
+												<i className='fas fa-users me-2'></i>
+												Społeczność
+											</Link>
+										</li>
+										<li>
+											<hr className='dropdown-divider' />
+										</li>
+										<li>
+											<button className='dropdown-item' onClick={handleLogout}>
+												<i className='fas fa-sign-out-alt me-2'></i>
+												Wyloguj się
+											</button>
+										</li>
+									</ul>
+								</div>
 							</div>
 						) : (
 							<div className='d-flex'>

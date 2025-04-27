@@ -11,6 +11,8 @@ import Footer from './components/Footer';
 import { AuthProvider } from './context/AuthContext';
 import { SearchProvider } from './context/SearchContext';
 import ProtectedRoute from './components/ProtectedRoute';
+import UserProfile from './pages/UserProfile';
+import ReadingStats from './components/ReadingStats';
 
 function App() {
 	return (
@@ -30,6 +32,23 @@ function App() {
 								element={
 									<ProtectedRoute>
 										<Profile />
+									</ProtectedRoute>
+								}
+							/>
+							{/* Dodaj nowe trasy */}
+							<Route path='/user/:id' element={<UserProfile />} />
+							<Route
+								path='/reading-stats'
+								element={
+									<ProtectedRoute>
+										<div className='container py-5'>
+											<h2 className='mb-4'>Twoje statystyki czytelnicze</h2>
+											<ReadingStats
+												stats={null}
+												isLoading={false}
+												error={null}
+											/>
+										</div>
 									</ProtectedRoute>
 								}
 							/>

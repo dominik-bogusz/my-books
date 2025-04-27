@@ -10,6 +10,7 @@ import useExchange from '../hooks/useExchange';
 import ExchangeOfferForm from '../components/ExchangeOfferForm';
 import ExchangeOfferList from '../components/ExchangeOfferList';
 import ExchangeMessageSystem from '../components/ExchangeMessageSystem';
+import ReadingProgressTracker from '../components/ReadingProgressTracker';
 
 const BookDetail = () => {
 	const { id } = useParams<{ id: string }>();
@@ -36,7 +37,7 @@ const BookDetail = () => {
 		null
 	);
 	const [activeTab, setActiveTab] = useState<
-		'details' | 'reviews' | 'exchange'
+		'details' | 'reviews' | 'exchange' | 'progress'
 	>('details');
 
 	const {
@@ -260,6 +261,15 @@ const BookDetail = () => {
 					>
 						<i className='fas fa-exchange-alt me-2'></i>
 						Wymiana
+					</button>
+				</li>
+				<li className='nav-item'>
+					<button
+						className={`nav-link ${activeTab === 'progress' ? 'active' : ''}`}
+						onClick={() => setActiveTab('progress')}
+					>
+						<i className='fas fa-book-reader me-2'></i>
+						Postęp czytania
 					</button>
 				</li>
 			</ul>
@@ -509,6 +519,36 @@ const BookDetail = () => {
 							</div>
 						</div>
 					)}
+				</div>
+			)}
+			{activeTab === 'progress' && book && (
+				<div className='row'>
+					<div className='col-md-6 mb-4'>
+						<ReadingProgressTracker book={book} />
+					</div>
+					<div className='col-md-6'>
+						<div className='card'>
+							<div className='card-header'>
+								<h5 className='mb-0'>
+									<i className='fas fa-info-circle me-2'></i>
+									Wskazówki
+								</h5>
+							</div>
+							<div className='card-body'>
+								<p>Śledząc postęp czytania, możesz:</p>
+								<ul>
+									<li>Śledzić, ile książek przeczytałeś</li>
+									<li>Analizować swoje nawyki czytelnicze</li>
+									<li>Ustawiać i realizować cele czytelnicze</li>
+									<li>Pamiętać, które książki już przeczytałeś</li>
+								</ul>
+								<p>
+									Wszystkie statystyki czytelnicze znajdziesz w sekcji{' '}
+									<strong>Statystyki</strong> w swoim profilu.
+								</p>
+							</div>
+						</div>
+					</div>
 				</div>
 			)}
 		</div>
