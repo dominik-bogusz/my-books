@@ -35,7 +35,40 @@ const UserProfile: React.FC = () => {
 	const [readingList, setReadingList] = useState<Book[]>([]);
 	const [loadingBooks, setLoadingBooks] = useState(false);
 	const [booksError, setBooksError] = useState<string | null>(null);
+	const [allUsers, setAllUsers] = useState([]);
+	const [isLoadingUsers, setIsLoadingUsers] = useState(false);
 
+	useEffect(() => {
+		const fetchAllUsers = async () => {
+			if (!isAuthenticated) return;
+
+			setIsLoadingUsers(true);
+			try {
+				const { data, error } = await supabase
+					.from('profiles')
+					.select('*')
+					.limit(20) // Limit do 20 użytkowników dla wydajności
+					.order('created_at', { ascending: false });
+
+				if (error) throw error;
+
+				// Filtruj bieżącego użytkownika z listy jeśli jest zalogowany
+				const filteredUsers = user
+					? data.filter((profile) => profile.id !== user.id)
+					: data;
+
+				setAllUsers(filteredUsers || []);
+			} catch (err) {
+				console.error('Błąd pobierania użytkowników:', err);
+			} finally {
+				setIsLoadingUsers(false);
+			}
+		};
+
+		if (activeTab === 'social') {
+			fetchAllUsers();
+		}
+	}, [isAuthenticated, user, activeTab]);
 	// Pobieranie danych profilu
 	useEffect(() => {
 		const fetchProfile = async () => {
@@ -215,6 +248,128 @@ const UserProfile: React.FC = () => {
 							<h3 className='card-title mb-1'>{profileData.username}</h3>
 							{profileData.bio && (
 								<p className='text-muted mb-3'>{profileData.bio}</p>
+							)}
+
+							{activeTab === 'social' && (
+								<>
+									<div className='mb-4'>
+										<h4>Znajdź użytkowników</h4>
+										<div className='input-group mb-3'>
+											<input
+												type='text'
+												className='form-control'
+												placeholder='Szukaj po nazwie użytkownika...'
+												value={searchQuery}
+												onChange={(e) => setSearchQuery(e.target.value)}
+											/>
+											<button
+												className='btn btn-primary'
+												type='button'
+												onClick={handleSearch}
+											>
+												<i className='fas fa-search'></i>
+											</button>
+										</div>
+
+										{isSearching ? (
+											<div className='text-center py-3'>
+												<div
+													className='spinner-border text-primary'
+													role='status'
+												>
+													<span className='visually-hidden'>Ładowanie...</span>
+												</div>
+											</div>
+										) : searchQuery ? (
+											// Pokazuj wyniki wyszukiwania, jeśli szukano
+											<div className='list-group'>
+												{searchResults.map((user) => (
+													<Link
+														key={user.id}
+														to={`/user/${user.id}`}
+														className='list-group-item list-group-item-action d-flex align-items-center'
+													>
+														{/* Avatar i dane użytkownika */}
+														{/* ... kod jak wcześniej ... */}
+													</Link>
+												))}
+
+												{searchResults.length === 0 && (
+													<div className='text-center py-3'>
+														<p className='text-muted'>
+															Nie znaleziono użytkowników.
+														</p>
+													</div>
+												)}
+											</div>
+										) : (
+											// Pokazuj wszystkich użytkowników, jeśli nie szukano
+											<div className='list-group'>
+												{isLoadingUsers ? (
+													<div className='text-center py-3'>
+														<div
+															className='spinner-border text-primary'
+															role='status'
+														>
+															<span className='visually-hidden'>
+																Ładowanie użytkowników...
+															</span>
+														</div>
+													</div>
+												) : (
+													<>
+														<h5 className='mb-3'>Wszyscy użytkownicy</h5>
+														{allUsers.map((user) => (
+															<Link
+																key={user.id}
+																to={`/user/${user.id}`}
+																className='list-group-item list-group-item-action d-flex align-items-center'
+															>
+																{user.avatar_url ? (
+																	<img
+																		src={user.avatar_url}
+																		alt={user.username}
+																		className='rounded-circle me-3'
+																		width='40'
+																		height='40'
+																	/>
+																) : (
+																	<div
+																		className='rounded-circle bg-light d-flex align-items-center justify-content-center me-3'
+																		style={{ width: '40px', height: '40px' }}
+																	>
+																		<span>
+																			{user.username[0].toUpperCase()}
+																		</span>
+																	</div>
+																)}
+																<div>
+																	<h6 className='mb-0'>{user.username}</h6>
+																	<small className='text-muted'>
+																		Dołączył:{' '}
+																		{new Date(
+																			user.created_at
+																		).toLocaleDateString()}
+																	</small>
+																</div>
+															</Link>
+														))}
+
+														{allUsers.length === 0 && (
+															<div className='text-center py-3'>
+																<p className='text-muted'>
+																	Brak innych użytkowników.
+																</p>
+															</div>
+														)}
+													</>
+												)}
+											</div>
+										)}
+									</div>
+
+									{/* Reszta zawartości zakładki społecznościowej */}
+								</>
 							)}
 
 							{/* Statystyki */}

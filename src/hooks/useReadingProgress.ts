@@ -196,7 +196,9 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 
 				// Tworzenie obiektu statystyk
 				const formattedStats: ReadingStats = {
-					total_books_read: statsData?.total_books_read || 0,
+					total_books_read: statsData
+						? statsData.total_books_read
+						: formattedRecentBooks.length || 0,
 					total_pages_read: statsData?.total_pages_read || 0,
 					total_books_abandoned: statsData?.total_books_abandoned || 0,
 					books_in_progress: statsData?.books_in_progress || 0,

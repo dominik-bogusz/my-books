@@ -166,9 +166,9 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 				.from('exchange_offers')
 				.select(
 					`
-          *,
-          user_details:profiles(username, avatar_url)
-        `
+			  *,
+			  user_details:profiles(username, avatar_url)
+			`
 				)
 				.eq('user_id', user.id)
 				.order('created_at', { ascending: false });

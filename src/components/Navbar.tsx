@@ -102,16 +102,30 @@ const Navbar = () => {
 										data-bs-toggle='dropdown'
 										aria-expanded='false'
 									>
-										<div
-											className='me-2 rounded-circle bg-light d-flex align-items-center justify-content-center'
-											style={{ width: '32px', height: '32px' }}
-										>
-											<span>
-												{user?.user_metadata?.username?.[0]?.toUpperCase() ||
-													user?.email?.[0]?.toUpperCase() ||
-													'U'}
-											</span>
-										</div>
+										{user && (
+											<div
+												className='me-2 rounded-circle overflow-hidden'
+												style={{ width: '32px', height: '32px' }}
+											>
+												{user.user_metadata?.avatar_url ? (
+													<img
+														src={user.user_metadata.avatar_url}
+														alt='Avatar'
+														className='img-fluid'
+														width='32'
+														height='32'
+													/>
+												) : (
+													<div className='bg-light d-flex align-items-center justify-content-center h-100'>
+														<span>
+															{user?.user_metadata?.username?.[0]?.toUpperCase() ||
+																user?.email?.[0]?.toUpperCase() ||
+																'U'}
+														</span>
+													</div>
+												)}
+											</div>
+										)}
 										<span className='d-none d-sm-inline'>
 											{user?.user_metadata?.username ||
 												user?.email?.split('@')[0]}
