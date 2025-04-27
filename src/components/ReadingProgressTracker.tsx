@@ -1,4 +1,3 @@
-// src/components/ReadingProgressTracker.tsx
 import React, { useState, useEffect } from 'react';
 import { Book } from '../types/book';
 import { ReadingStatus } from '../types/reading';
@@ -22,7 +21,6 @@ const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
 		addBookToProgress,
 		updateBookProgress,
 		removeBookFromProgress,
-		getBookReadingStatus,
 	} = useReadingProgress();
 
 	const [status, setStatus] = useState<ReadingStatus | null>(null);
@@ -159,7 +157,7 @@ const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
 
 		return (
 			<span className={`badge ${badgeClass} fs-6`}>
-				<i className={getStatusIcon(status)} className='me-1'></i>
+				<i className={`${getStatusIcon(status)} me-1`}></i>
 				{badgeText}
 			</span>
 		);

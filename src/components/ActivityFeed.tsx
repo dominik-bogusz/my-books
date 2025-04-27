@@ -1,11 +1,10 @@
-// src/components/ActivityFeed.tsx
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { ActivityItem } from '../types/social';
 import useSocial from '../hooks/useSocial';
 
 interface ActivityFeedProps {
-	userId?: string; // Jeśli podane, pokazuje aktywność konkretnego użytkownika
+	userId?: string;
 	limit?: number;
 }
 
@@ -21,7 +20,6 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId, limit = 10 }) => {
 
 	useEffect(() => {
 		if (userId) {
-			// Jeśli podano userId, pobieramy aktywność tego użytkownika
 			fetchUserActivity(userId);
 		} else {
 			// W przeciwnym razie pobieramy aktywność obserwowanych

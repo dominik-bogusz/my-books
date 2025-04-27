@@ -336,74 +336,7 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 		setIsLoadingOffers(true);
 		setOffersError(null);
 
-		try {
-			const {
-				id,
-				user_id,
-				book_id,
-				book_data,
-				created_at,
-				user_details,
-				...updateData
-			} = updates;
-
-			const { data, error } = await supabase
-				.from('exchange_offers')
-				.update({
-					...updateData,
-					updated_at: new Date().toISOString(),
-				})
-				.eq('id', offerId)
-				.eq('user_id', user.id)
-				.select(
-					`
-          *,
-          user_details:profiles(username, avatar_url)
-        `
-				)
-				.single();
-
-			if (error) throw error;
-
-			if (data) {
-				const updatedOffer = {
-					...data,
-					book_data:
-						typeof data.book_data === 'string'
-							? JSON.parse(data.book_data)
-							: data.book_data,
-				} as ExchangeOffer;
-
-				setUserOffers((prev) =>
-					prev.map((offer) => (offer.id === offerId ? updatedOffer : offer))
-				);
-
-				setBookOffers((prev) =>
-					prev.map((offer) => (offer.id === offerId ? updatedOffer : offer))
-				);
-
-				setExchangeOffers((prev) =>
-					prev.map((offer) => (offer.id === offerId ? updatedOffer : offer))
-				);
-
-				if (selectedOffer && selectedOffer.id === offerId) {
-					setSelectedOffer(updatedOffer);
-				}
-
-				return true;
-			}
-
-			return false;
-		} catch (error) {
-			console.error('Błąd podczas aktualizacji oferty wymiany:', error);
-			setOffersError(
-				'Nie udało się zaktualizować oferty wymiany. Spróbuj ponownie później.'
-			);
-			return false;
-		} finally {
-			setIsLoadingOffers(false);
-		}
-	};
+		
 
 	const deleteOffer = async (offerId: string): Promise<boolean> => {
 		if (!isAuthenticated || !user) {

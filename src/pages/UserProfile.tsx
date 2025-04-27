@@ -1,4 +1,3 @@
-// src/pages/UserProfile.tsx
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -37,6 +36,29 @@ const UserProfile: React.FC = () => {
 	const [booksError, setBooksError] = useState<string | null>(null);
 	const [allUsers, setAllUsers] = useState([]);
 	const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+	const [searchQuery, setSearchQuery] = useState('');
+	const [searchResults, setSearchResults] = useState([]);
+	const [isSearching, setIsSearching] = useState(false);
+
+	const handleSearch = async () => {
+		if (!searchQuery.trim()) return;
+
+		setIsSearching(true);
+		try {
+			const { data, error } = await supabase
+				.from('profiles')
+				.select('*')
+				.ilike('username', `%${searchQuery}%`)
+				.limit(10);
+
+			if (error) throw error;
+			setSearchResults(data || []);
+		} catch (err) {
+			console.error('Error searching users:', err);
+		} finally {
+			setIsSearching(false);
+		}
+	};
 
 	useEffect(() => {
 		const fetchAllUsers = async () => {
