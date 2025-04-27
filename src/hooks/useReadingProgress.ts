@@ -148,44 +148,144 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 			setStatsError(null);
 
 			try {
-				// Pobieranie podstawowych statystyk
-				const { data: statsData, error: statsError } = await supabase.rpc(
-					'get_user_reading_stats',
-					{ user_id_param: targetUserId }
-				);
+				// Pobieranie wszystkich postępów czytania dla użytkownika
+				const { data: progressData, error: progressError } = await supabase
+					.from('reading_progress')
+					.select('*')
+					.eq('user_id', targetUserId);
 
-				if (statsError) throw statsError;
+				if (progressError) throw progressError;
 
-				// Pobieranie ostatnio ukończonych książek
-				const { data: recentBooks, error: recentError } = await supabase
+				// Pobieranie ukończonych książek
+				const { data: completedBooks, error: completedError } = await supabase
 					.from('reading_progress')
 					.select('*')
 					.eq('user_id', targetUserId)
 					.eq('status', 'completed')
-					.order('end_date', { ascending: false })
-					.limit(5);
+					.order('end_date', { ascending: false });
 
-				if (recentError) throw recentError;
+				if (completedError) throw completedError;
 
-				// Pobieranie statystyk gatunków
-				const { data: genresData, error: genresError } = await supabase.rpc(
-					'get_user_favorite_genres',
-					{ user_id_param: targetUserId }
-				);
+				// Obliczanie statystyk ręcznie
+				let totalBooksRead = 0;
+				let totalPagesRead = 0;
+				let booksInProgress = 0;
+				let totalCompletionDays = 0;
+				let totalBooksWithDates = 0;
 
-				if (genresError) throw genresError;
+				// Mapa do przechowywania gatunków
+				const genreMap = new Map();
 
-				// Pobieranie statystyk miesięcznych
-				const { data: monthlyData, error: monthlyError } = await supabase.rpc(
-					'get_user_monthly_reading',
-					{ user_id_param: targetUserId }
-				);
+				// Mapa do przechowywania danych miesięcznych
+				const monthlyMap = new Map();
 
-				if (monthlyError) throw monthlyError;
+				// Data do obliczania dni w serii
+				let currentStreak = 0;
+				let longestStreak = 0;
+				let lastCompletionDate: Date | null = null;
 
-				// Formatowanie danych
-				const formattedRecentBooks = recentBooks
-					? (recentBooks.map((item) => ({
+				if (progressData) {
+					// Przetwarzaj wszystkie dane
+					progressData.forEach((item) => {
+						const bookData =
+							typeof item.book_data === 'string'
+								? JSON.parse(item.book_data)
+								: item.book_data;
+
+						if (item.status === 'completed') {
+							totalBooksRead++;
+							totalPagesRead += bookData.pageCount || 0;
+
+							// Obliczanie dni potrzebnych na przeczytanie książki
+							if (item.start_date && item.end_date) {
+								const startDate = new Date(item.start_date);
+								const endDate = new Date(item.end_date);
+								const daysToComplete = Math.ceil(
+									(endDate.getTime() - startDate.getTime()) / (1000 * 3600 * 24)
+								);
+
+								if (daysToComplete >= 0) {
+									totalCompletionDays += daysToComplete;
+									totalBooksWithDates++;
+								}
+							}
+
+							// Sprawdź czy jest to nowa data ukończenia do obliczenia serii
+							if (item.end_date) {
+								const completionDate = new Date(item.end_date);
+								const formattedDate = completionDate
+									.toISOString()
+									.split('T')[0];
+
+								// Dodaj do mapy miesięcznej
+								const yearMonth = formattedDate.substring(0, 7); // format YYYY-MM
+								const monthCount = monthlyMap.get(yearMonth) || 0;
+								monthlyMap.set(yearMonth, monthCount + 1);
+
+								// Obliczanie serii
+								if (lastCompletionDate) {
+									// Sprawdź czy to kolejny dzień
+									const dayDiff = Math.ceil(
+										(completionDate.getTime() - lastCompletionDate.getTime()) /
+											(1000 * 3600 * 24)
+									);
+
+									if (dayDiff === 1) {
+										currentStreak++;
+									} else if (dayDiff !== 0) {
+										// Jeśli nie ten sam dzień i nie dzień po dniu
+										currentStreak = 1;
+									}
+								} else {
+									currentStreak = 1;
+								}
+
+								// Aktualizuj najdłuższą serię
+								longestStreak = Math.max(longestStreak, currentStreak);
+								lastCompletionDate = completionDate;
+							}
+
+							// Dodaj gatunki
+							if (bookData.categories && bookData.categories.length > 0) {
+								bookData.categories.forEach((category: string) => {
+									const count = genreMap.get(category) || 0;
+									genreMap.set(category, count + 1);
+								});
+							}
+						} else if (item.status === 'in_progress') {
+							booksInProgress++;
+						}
+					});
+				}
+
+				// Sprawdź, czy seria jest aktualna (czytanie w ciągu ostatnich dni)
+				let finalCurrentStreak = 0;
+				if (lastCompletionDate) {
+					const today = new Date();
+					const daysSinceLastCompletion = Math.ceil(
+						(today.getTime() - lastCompletionDate.getTime()) /
+							(1000 * 3600 * 24)
+					);
+
+					if (daysSinceLastCompletion <= 1) {
+						// Dzisiaj lub wczoraj
+						finalCurrentStreak = currentStreak;
+					}
+				}
+
+				// Konwertuj mapę gatunków na listę posortowaną malejąco
+				const favoriteGenres = Array.from(genreMap.entries())
+					.map(([genre, count]) => ({ genre, count: count as number }))
+					.sort((a, b) => b.count - a.count);
+
+				// Konwertuj mapę miesięczną na listę
+				const monthlyData = Array.from(monthlyMap.entries())
+					.map(([month, count]) => ({ month, count: count as number }))
+					.sort((a, b) => a.month.localeCompare(b.month));
+
+				// Przygotuj dane ukończonych książek
+				const formattedCompletedBooks = completedBooks
+					? (completedBooks.map((item) => ({
 							...item,
 							book_data:
 								typeof item.book_data === 'string'
@@ -194,20 +294,26 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 					  })) as ReadingProgress[])
 					: [];
 
-				// Tworzenie obiektu statystyk
+				// Oblicz średni czas ukończenia książki
+				const averageCompletionDays =
+					totalBooksWithDates > 0
+						? Math.round(totalCompletionDays / totalBooksWithDates)
+						: 0;
+
+				// Utwórz obiekt statystyk z obliczonymi wartościami
 				const formattedStats: ReadingStats = {
-					total_books_read: statsData
-						? statsData.total_books_read
-						: formattedRecentBooks.length || 0,
-					total_pages_read: statsData?.total_pages_read || 0,
-					total_books_abandoned: statsData?.total_books_abandoned || 0,
-					books_in_progress: statsData?.books_in_progress || 0,
-					average_completion_days: statsData?.average_completion_days || 0,
-					current_streak_days: statsData?.current_streak_days || 0,
-					longest_streak_days: statsData?.longest_streak_days || 0,
-					favorite_genres: genresData || [],
-					reading_by_month: monthlyData || [],
-					last_completed_books: formattedRecentBooks,
+					total_books_read: totalBooksRead,
+					total_pages_read: totalPagesRead,
+					total_books_abandoned: progressData.filter(
+						(item) => item.status === 'abandoned'
+					).length,
+					books_in_progress: booksInProgress,
+					average_completion_days: averageCompletionDays,
+					current_streak_days: finalCurrentStreak,
+					longest_streak_days: longestStreak,
+					favorite_genres: favoriteGenres,
+					reading_by_month: monthlyData,
+					last_completed_books: formattedCompletedBooks,
 				};
 
 				setReadingStats(formattedStats);
