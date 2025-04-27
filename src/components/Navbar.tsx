@@ -87,6 +87,15 @@ const Navbar = () => {
 					</form>
 
 					<div className='ms-auto d-flex align-items-center'>
+						{/* Link do społeczności - kieruje do istniejącego widoku użytkownika */}
+						<Link
+							to={isAuthenticated && user ? `/user/${user.id}` : '/login'}
+							className='btn btn-outline-primary me-3'
+						>
+							<i className='fas fa-users me-2'></i>
+							Społeczność
+						</Link>
+
 						{isAuthenticated ? (
 							<div className='d-flex align-items-center'>
 								{/* Powiadomienia */}
@@ -139,18 +148,6 @@ const Navbar = () => {
 											<Link className='dropdown-item' to='/profile'>
 												<i className='fas fa-user me-2'></i>
 												Mój profil
-											</Link>
-										</li>
-										<li>
-											<Link className='dropdown-item' to='/reading-stats'>
-												<i className='fas fa-chart-bar me-2'></i>
-												Statystyki czytelnicze
-											</Link>
-										</li>
-										<li>
-											<Link className='dropdown-item' to={`/user/${user?.id}`}>
-												<i className='fas fa-users me-2'></i>
-												Społeczność
 											</Link>
 										</li>
 										<li>

@@ -350,83 +350,11 @@ const Profile: React.FC = () => {
 								</div>
 							</div>
 
-							{isEditing ? (
-								/* Edit Profile Form */
-								<div>
-									<div className='mb-3'>
-										<label htmlFor='username' className='form-label'>
-											Nazwa użytkownika
-										</label>
-										<input
-											type='text'
-											className='form-control'
-											id='username'
-											value={profileData.username}
-											onChange={(e) =>
-												setProfileData({
-													...profileData,
-													username: e.target.value,
-												})
-											}
-										/>
-									</div>
-
-									<div className='d-flex gap-2 mt-4'>
-										<button
-											className='btn btn-primary flex-grow-1'
-											onClick={handleSaveProfile}
-											disabled={isSaving}
-										>
-											{isSaving ? (
-												<>
-													<span
-														className='spinner-border spinner-border-sm me-2'
-														role='status'
-														aria-hidden='true'
-													></span>
-													Zapisywanie...
-												</>
-											) : (
-												'Zapisz'
-											)}
-										</button>
-										<button
-											className='btn btn-outline-secondary'
-											onClick={() => setIsEditing(false)}
-											disabled={isSaving}
-										>
-											Anuluj
-										</button>
-									</div>
-								</div>
-							) : (
-								/* Profile Display */
-								<div>
-									<h3 className='card-title mb-0'>{profileData.username}</h3>
-									<p className='text-muted'>{user?.email}</p>
-
-									<div className='d-grid gap-2 mt-4'>
-										<button
-											className='btn btn-outline-primary'
-											onClick={() => setIsEditing(true)}
-										>
-											Edytuj profil
-										</button>
-										<button
-											className='btn btn-outline-danger'
-											onClick={handleLogout}
-										>
-											Wyloguj się
-										</button>
-										<button
-											className='btn btn-danger'
-											onClick={() => setShowDeleteConfirmation(true)}
-										>
-											Usuń konto
-										</button>
-									</div>
-								</div>
-							)}
+							{/* Informacje o profilu - nazwa i email bez przycisków zarządzania */}
+							<div>
+								<h3 className='card-title mb-0'>{profileData.username}</h3>
+								<p className='text-muted'>{user?.email}</p>
+							</div>
 
 							{error && (
 								<div className='alert alert-danger mt-3' role='alert'>
@@ -655,9 +583,9 @@ const Profile: React.FC = () => {
 											) : (
 												<div className='list-group list-group-flush'>
 													{followers.slice(0, 5).map((follower) => (
-														<Link
+														<a
 															key={follower.id}
-															to={`/user/${follower.id}`}
+															href={`/user/${follower.id}`}
 															className='list-group-item list-group-item-action d-flex align-items-center'
 														>
 															{follower.avatar_url ? (
@@ -679,16 +607,16 @@ const Profile: React.FC = () => {
 																</div>
 															)}
 															<span>{follower.username}</span>
-														</Link>
+														</a>
 													))}
 													{followers.length > 5 && (
-														<Link
-															to={`/user/${user?.id}`}
+														<a
+															href={`/user/${user?.id}`}
 															className='list-group-item list-group-item-action text-center text-primary'
 														>
 															<i className='fas fa-users me-2'></i>
 															Zobacz wszystkich
-														</Link>
+														</a>
 													)}
 												</div>
 											)}
@@ -723,9 +651,9 @@ const Profile: React.FC = () => {
 											) : (
 												<div className='list-group list-group-flush'>
 													{following.slice(0, 5).map((followed) => (
-														<Link
+														<a
 															key={followed.id}
-															to={`/user/${followed.id}`}
+															href={`/user/${followed.id}`}
 															className='list-group-item list-group-item-action d-flex align-items-center'
 														>
 															{followed.avatar_url ? (
@@ -747,16 +675,16 @@ const Profile: React.FC = () => {
 																</div>
 															)}
 															<span>{followed.username}</span>
-														</Link>
+														</a>
 													))}
 													{following.length > 5 && (
-														<Link
-															to={`/user/${user?.id}`}
+														<a
+															href={`/user/${user?.id}`}
 															className='list-group-item list-group-item-action text-center text-primary'
 														>
 															<i className='fas fa-users me-2'></i>
 															Zobacz wszystkich
-														</Link>
+														</a>
 													)}
 												</div>
 											)}
