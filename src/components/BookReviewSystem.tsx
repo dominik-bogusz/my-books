@@ -1,6 +1,6 @@
 // src/components/BookReviewSystem.tsx
 import React, { useState } from 'react';
-import { Book, BookReview } from '../types/book';
+import { Book } from '../types/book';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import useReviews from '../hooks/useReviews';

@@ -21,6 +21,7 @@ const ExchangeMessageSystem: React.FC<ExchangeMessageSystemProps> = ({
 		sendMessage,
 		markMessageAsRead,
 		requestExchange,
+		fetchOfferMessages,
 	} = useExchange(offer.book_id);
 
 	const [newMessage, setNewMessage] = useState('');
@@ -31,9 +32,9 @@ const ExchangeMessageSystem: React.FC<ExchangeMessageSystemProps> = ({
 	// Fetch messages when component mounts
 	useEffect(() => {
 		if (offer && offer.id) {
-			fetchMessages();
+			fetchOfferMessages(offer.id);
 		}
-	}, [offer]);
+	}, [offer, fetchOfferMessages]);
 
 	// Scroll to bottom when messages change
 	useEffect(() => {
@@ -49,12 +50,7 @@ const ExchangeMessageSystem: React.FC<ExchangeMessageSystemProps> = ({
 				}
 			});
 		}
-	}, [exchangeMessages, user]);
-
-	const fetchMessages = async () => {
-		// This function is provided by the useExchange hook
-		await fetchOfferMessages(offer.id);
-	};
+	}, [exchangeMessages, user, markMessageAsRead]);
 
 	const handleSendMessage = async (e: React.FormEvent) => {
 		e.preventDefault();
@@ -70,7 +66,7 @@ const ExchangeMessageSystem: React.FC<ExchangeMessageSystemProps> = ({
 
 			if (success) {
 				setNewMessage('');
-				await fetchMessages();
+				// Messages will be updated automatically via state
 			}
 		} catch (error) {
 			console.error('Error sending message:', error);

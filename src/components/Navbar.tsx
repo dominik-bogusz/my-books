@@ -1,3 +1,4 @@
+// src/components/Navbar.tsx
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -73,7 +74,7 @@ const Navbar = () => {
 							onChange={(e) => setSearchQuery(e.target.value)}
 						/>
 						<button
-							className='btn text-white fw-semi-bold btn-lg'
+							className='btn text-white fw-semi-bold'
 							style={{
 								background: 'linear-gradient(90deg, #DA831C 0%, #FFD028 100%)',
 								border: 'none',

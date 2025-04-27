@@ -1,7 +1,7 @@
 // src/components/ExchangeOfferList.tsx
 import React from 'react';
 import { ExchangeOffer } from '../types/book';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 interface ExchangeOfferListProps {

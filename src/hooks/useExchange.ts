@@ -107,10 +107,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 		null
 	);
 
-	// =====================
-	// FUNKCJE DLA OFERT
-	// =====================
-
 	// Pobieranie ofert dla konkretnej książki
 	const fetchOffersByBook = useCallback(async (bookId: string) => {
 		if (!bookId) return;
@@ -616,10 +612,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 			);
 		}
 	}, [isAuthenticated, user]);
-
-	// =====================
-	// FUNKCJE DLA TRANSAKCJI
-	// =====================
 
 	// Pobieranie transakcji użytkownika
 	const fetchUserTransactions = useCallback(async () => {
