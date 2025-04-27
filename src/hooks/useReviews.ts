@@ -1,20 +1,15 @@
-// src/hooks/useReviews.ts
 import { useState, useEffect, useCallback } from 'react';
 import { BookReview, Book, BookRatingSummary } from '../types/book';
 import { useAuth } from '../context/AuthContext';
 import supabase from '../lib/supabase';
 
 interface UseReviewsReturn {
-	// Pobieranie recenzji
 	bookReviews: BookReview[];
 	userReview: BookReview | null;
 	isLoadingReviews: boolean;
 	reviewsError: string | null;
-
-	// Statystyki recenzji
 	ratingSummary: BookRatingSummary | null;
 
-	// Akcje
 	submitReview: (
 		bookId: string,
 		book: Book,
@@ -28,7 +23,6 @@ interface UseReviewsReturn {
 	) => Promise<boolean>;
 	deleteReview: (reviewId: string) => Promise<boolean>;
 
-	// Odświeżanie danych
 	refreshReviews: (bookId: string) => Promise<void>;
 }
 
@@ -54,7 +48,6 @@ export const useReviews = (bookId?: string): UseReviewsReturn => {
 	const [isLoadingReviews, setIsLoadingReviews] = useState(false);
 	const [reviewsError, setReviewsError] = useState<string | null>(null);
 
-	// Funkcja pobierająca recenzje dla danej książki
 	const fetchReviews = useCallback(
 		async (bookId: string) => {
 			if (!bookId) return;
@@ -63,7 +56,6 @@ export const useReviews = (bookId?: string): UseReviewsReturn => {
 			setReviewsError(null);
 
 			try {
-				// Pobieramy recenzje wraz z danymi użytkownika
 				const { data: reviewsData, error: reviewsError } = await supabase
 					.from('book_reviews')
 					.select(
@@ -80,7 +72,6 @@ export const useReviews = (bookId?: string): UseReviewsReturn => {
 				}
 
 				if (reviewsData) {
-					// Konwertujemy dane na właściwy format
 					const reviews = reviewsData.map((review) => ({
 						...review,
 						book_data:
@@ -91,7 +82,6 @@ export const useReviews = (bookId?: string): UseReviewsReturn => {
 
 					setBookReviews(reviews);
 
-					// Sprawdzamy, czy użytkownik ma już recenzję tej książki
 					if (isAuthenticated && user) {
 						const userExistingReview = reviews.find(
 							(review) => review.user_id === user.id
@@ -99,7 +89,6 @@ export const useReviews = (bookId?: string): UseReviewsReturn => {
 						setUserReview(userExistingReview || null);
 					}
 
-					// Obliczamy statystyki recenzji
 					calculateRatingSummary(reviews);
 				}
 			} catch (error) {
@@ -114,7 +103,6 @@ export const useReviews = (bookId?: string): UseReviewsReturn => {
 		[isAuthenticated, user]
 	);
 
-	// Obliczanie statystyk recenzji
 	const calculateRatingSummary = (reviews: BookReview[]) => {
 		if (!reviews || reviews.length === 0) {
 			setRatingSummary(DEFAULT_RATING_SUMMARY);
@@ -133,7 +121,6 @@ export const useReviews = (bookId?: string): UseReviewsReturn => {
 
 		reviews.forEach((review) => {
 			sum += review.rating;
-			// Zwiększamy licznik dla danej oceny
 			distribution[review.rating as 1 | 2 | 3 | 4 | 5]++;
 		});
 
@@ -144,7 +131,6 @@ export const useReviews = (bookId?: string): UseReviewsReturn => {
 		});
 	};
 
-	// Dodawanie nowej recenzji
 	const submitReview = async (
 		bookId: string,
 		book: Book,
@@ -170,15 +156,9 @@ export const useReviews = (bookId?: string): UseReviewsReturn => {
 		setReviewsError(null);
 
 		try {
-			// Sprawdzamy, czy użytkownik już recenzował tę książkę
 			if (userReview) {
 				return await updateReview(userReview.id, rating, reviewText);
 			}
-
-			// Zapisujemy dane książki jako JSON
-			const bookData = JSON.stringify(book);
-
-			// Dodajemy nową recenzję
 			const { data, error } = await supabase
 				.from('book_reviews')
 				.insert({
@@ -186,7 +166,7 @@ export const useReviews = (bookId?: string): UseReviewsReturn => {
 					book_id: bookId,
 					rating,
 					review_text: reviewText || null,
-					book_data: book,
+					book_data: JSON.stringify(book),
 				})
 				.select(
 					`
@@ -201,7 +181,6 @@ export const useReviews = (bookId?: string): UseReviewsReturn => {
 			}
 
 			if (data) {
-				// Dodajemy nową recenzję do listy
 				const newReview: BookReview = {
 					...data,
 					book_data:
@@ -213,7 +192,6 @@ export const useReviews = (bookId?: string): UseReviewsReturn => {
 				setBookReviews((prev) => [newReview, ...prev]);
 				setUserReview(newReview);
 
-				// Aktualizujemy statystyki
 				calculateRatingSummary([...bookReviews, newReview]);
 
 				return true;
@@ -231,7 +209,6 @@ export const useReviews = (bookId?: string): UseReviewsReturn => {
 		}
 	};
 
-	// Aktualizacja istniejącej recenzji
 	const updateReview = async (
 		reviewId: string,
 		rating: number,
@@ -259,7 +236,7 @@ export const useReviews = (bookId?: string): UseReviewsReturn => {
 					updated_at: new Date().toISOString(),
 				})
 				.eq('id', reviewId)
-				.eq('user_id', user.id) // Upewniamy się, że użytkownik jest właścicielem recenzji
+				.eq('user_id', user.id)
 				.select(
 					`
           *,
@@ -273,7 +250,6 @@ export const useReviews = (bookId?: string): UseReviewsReturn => {
 			}
 
 			if (data) {
-				// Aktualizujemy recenzję w stanie
 				const updatedReview: BookReview = {
 					...data,
 					book_data:
@@ -289,7 +265,6 @@ export const useReviews = (bookId?: string): UseReviewsReturn => {
 				);
 				setUserReview(updatedReview);
 
-				// Aktualizujemy statystyki
 				calculateRatingSummary(
 					bookReviews.map((review) =>
 						review.id === reviewId ? updatedReview : review
@@ -311,7 +286,6 @@ export const useReviews = (bookId?: string): UseReviewsReturn => {
 		}
 	};
 
-	// Usuwanie recenzji
 	const deleteReview = async (reviewId: string): Promise<boolean> => {
 		if (!isAuthenticated || !user) {
 			setReviewsError('Musisz być zalogowany, aby usunąć recenzję.');
@@ -331,17 +305,15 @@ export const useReviews = (bookId?: string): UseReviewsReturn => {
 				.from('book_reviews')
 				.delete()
 				.eq('id', reviewId)
-				.eq('user_id', user.id); // Upewniamy się, że użytkownik jest właścicielem recenzji
+				.eq('user_id', user.id);
 
 			if (error) {
 				throw error;
 			}
 
-			// Aktualizujemy stan
 			setBookReviews((prev) => prev.filter((review) => review.id !== reviewId));
 			setUserReview(null);
 
-			// Aktualizujemy statystyki
 			calculateRatingSummary(
 				bookReviews.filter((review) => review.id !== reviewId)
 			);
@@ -358,17 +330,14 @@ export const useReviews = (bookId?: string): UseReviewsReturn => {
 		}
 	};
 
-	// Funkcja do odświeżania recenzji
 	const refreshReviews = async (bookId: string) => {
 		await fetchReviews(bookId);
 	};
 
-	// Pobieramy recenzje na starcie, jeśli mamy ID książki
 	useEffect(() => {
 		if (bookId) {
 			fetchReviews(bookId);
 		} else {
-			// Resetujemy stan, jeśli nie ma ID książki
 			setBookReviews([]);
 			setUserReview(null);
 			setRatingSummary(DEFAULT_RATING_SUMMARY);

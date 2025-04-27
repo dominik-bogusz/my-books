@@ -276,7 +276,7 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 				.insert({
 					user_id: user.id,
 					book_id: book.id,
-					book_data: book,
+					book_data: JSON.stringify(book),
 					condition,
 					description: description || null,
 					exchange_type: exchangeType,
@@ -341,7 +341,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 		setOffersError(null);
 
 		try {
-			// Usuwamy pola, których nie chcemy aktualizować
 			const {
 				id,
 				user_id,
@@ -359,7 +358,7 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 					updated_at: new Date().toISOString(),
 				})
 				.eq('id', offerId)
-				.eq('user_id', user.id) // Upewniamy się, że użytkownik jest właścicielem oferty
+				.eq('user_id', user.id)
 				.select(
 					`
           *,
@@ -379,7 +378,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 							: data.book_data,
 				} as ExchangeOffer;
 
-				// Aktualizujemy stan
 				setUserOffers((prev) =>
 					prev.map((offer) => (offer.id === offerId ? updatedOffer : offer))
 				);
@@ -411,7 +409,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 		}
 	};
 
-	// Usuwanie oferty
 	const deleteOffer = async (offerId: string): Promise<boolean> => {
 		if (!isAuthenticated || !user) {
 			setOffersError('Musisz być zalogowany, aby usunąć ofertę wymiany.');
@@ -431,11 +428,10 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 				.from('exchange_offers')
 				.delete()
 				.eq('id', offerId)
-				.eq('user_id', user.id); // Upewniamy się, że użytkownik jest właścicielem oferty
+				.eq('user_id', user.id);
 
 			if (error) throw error;
 
-			// Aktualizujemy stan
 			setUserOffers((prev) => prev.filter((offer) => offer.id !== offerId));
 			setBookOffers((prev) => prev.filter((offer) => offer.id !== offerId));
 			setExchangeOffers((prev) => prev.filter((offer) => offer.id !== offerId));
@@ -456,7 +452,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 		}
 	};
 
-	// Zmiana statusu aktywności oferty
 	const setOfferActive = async (
 		offerId: string,
 		active: boolean
@@ -464,16 +459,10 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 		return await updateOffer(offerId, { active });
 	};
 
-	// Czyszczenie wybranej oferty
 	const clearSelectedOffer = () => {
 		setSelectedOffer(null);
 	};
 
-	// =====================
-	// FUNKCJE DLA WIADOMOŚCI
-	// =====================
-
-	// Pobieranie wiadomości dla oferty
 	const fetchOfferMessages = useCallback(
 		async (offerId: string) => {
 			if (!isAuthenticated || !user || !offerId) return;
@@ -510,7 +499,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 		[isAuthenticated, user]
 	);
 
-	// Wysyłanie wiadomości
 	const sendMessage = async (
 		offerId: string,
 		recipientId: string,
@@ -550,7 +538,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 			if (error) throw error;
 
 			if (data) {
-				// Dodajemy nową wiadomość do listy
 				setExchangeMessages((prev) => [...prev, data as ExchangeMessage]);
 				return true;
 			}
@@ -567,7 +554,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 		}
 	};
 
-	// Oznaczanie wiadomości jako przeczytanej
 	const markMessageAsRead = async (messageId: string): Promise<boolean> => {
 		if (!isAuthenticated || !user) {
 			setMessagesError(
@@ -586,11 +572,10 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 				.from('exchange_messages')
 				.update({ read: true })
 				.eq('id', messageId)
-				.eq('recipient_id', user.id); // Tylko odbiorca może oznaczyć wiadomość jako przeczytaną
+				.eq('recipient_id', user.id);
 
 			if (error) throw error;
 
-			// Aktualizujemy stan
 			setExchangeMessages((prev) =>
 				prev.map((msg) => (msg.id === messageId ? { ...msg, read: true } : msg))
 			);
