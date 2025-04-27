@@ -216,8 +216,32 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 				setIsLoadingStats(false);
 			}
 		},
-		[user]
+		[user, supabase]
 	);
+
+	// W głównym komponencie hooka useReadingProgress - dodaj wywołanie funkcji w useEffect
+	useEffect(() => {
+		if (isAuthenticated && user) {
+			fetchUserReadingProgress();
+			fetchUserReadingGoal();
+			fetchUserReadingStats();
+		}
+	}, [
+		isAuthenticated,
+		user,
+		fetchUserReadingProgress,
+		fetchUserReadingGoal,
+		fetchUserReadingStats,
+	]);
+
+	// Pamiętaj o dodaniu funkcji fetchUserReadingStats do zwracanego obiektu
+	return {
+		// Inne zwracane wartości...
+		readingStats,
+		isLoadingStats,
+		statsError,
+		fetchUserReadingStats,
+	};
 
 	// Dodawanie książki do postępu czytania
 	const addBookToProgress = useCallback(
@@ -436,7 +460,7 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 	);
 
 	// Ustawianie celu czytelniczego
-	const setReadingGoal = useCallback(
+	const createReadingGoal = useCallback(
 		async (
 			year: number,
 			goalBooks: number,
