@@ -216,112 +216,16 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 				setIsLoadingStats(false);
 			}
 		},
-		[user, supabase]
+		[user]
 	);
 
-	// W głównym komponencie hooka useReadingProgress - dodaj wywołanie funkcji w useEffect
-	useEffect(() => {
-		if (isAuthenticated && user) {
-			fetchUserReadingProgress();
-			fetchUserReadingGoal();
-			fetchUserReadingStats();
-		}
-	}, [
-		isAuthenticated,
-		user,
-		fetchUserReadingProgress,
-		fetchUserReadingGoal,
-		fetchUserReadingStats,
-	]);
-
-	// Pamiętaj o dodaniu funkcji fetchUserReadingStats do zwracanego obiektu
-	return {
-		// Inne zwracane wartości...
-		readingStats,
-		isLoadingStats,
-		statsError,
-		fetchUserReadingStats,
-	};
-
-	// Dodawanie książki do postępu czytania
-	const addBookToProgress = useCallback(
-		async (book: Book, status: ReadingStatus): Promise<boolean> => {
-			if (!isAuthenticated || !user) {
-				setProgressError('Musisz być zalogowany, aby śledzić postęp czytania.');
-				return false;
-			}
-
-			setProgressError(null);
-
-			try {
-				// Sprawdzamy, czy książka już istnieje w postępie
-				const existingProgress = readingProgress.find(
-					(p) => p.book_id === book.id
-				);
-				if (existingProgress) {
-					// Aktualizacja istniejącego wpisu
-					return await updateBookProgress(existingProgress.id, { status });
-				}
-
-				// Tworzenie nowego wpisu
-				const newProgress: Partial<ReadingProgress> = {
-					user_id: user.id,
-					book_id: book.id,
-					book_data: book,
-					status,
-					progress_percentage: status === 'completed' ? 100 : 0,
-					start_date:
-						status !== 'not_started' ? new Date().toISOString() : undefined,
-					end_date:
-						status === 'completed' ? new Date().toISOString() : undefined,
-				};
-
-				const { data, error } = await supabase
-					.from('reading_progress')
-					.insert(newProgress)
-					.select()
-					.single();
-
-				if (error) throw error;
-
-				if (data) {
-					// Dodanie nowego postępu do stanu
-					const formattedProgress = {
-						...data,
-						book_data:
-							typeof data.book_data === 'string'
-								? JSON.parse(data.book_data)
-								: data.book_data,
-					} as ReadingProgress;
-
-					setReadingProgress((prev) => [formattedProgress, ...prev]);
-
-					// Aktualizacja celu czytelniczego, jeśli status to "completed"
-					if (status === 'completed' && readingGoal) {
-						const pages = book.pageCount || 0;
-						await supabase.rpc('update_reading_goal_progress', {
-							goal_id_param: readingGoal.id,
-							pages_param: pages,
-						});
-
-						// Odświeżenie celu
-						fetchUserReadingGoal();
-					}
-
-					return true;
-				}
-
-				return false;
-			} catch (error) {
-				console.error(
-					'Błąd podczas dodawania książki do postępu czytania:',
-					error
-				);
-				setProgressError('Nie udało się dodać książki do postępu czytania.');
-				return false;
-			}
+	// Sprawdzanie statusu czytania dla książki
+	const getBookReadingStatus = useCallback(
+		(bookId: string): ReadingStatus | null => {
+			const progress = readingProgress.find((p) => p.book_id === bookId);
+			return progress ? progress.status : null;
 		},
-		[isAuthenticated, user, readingProgress, readingGoal, fetchUserReadingGoal]
+		[readingProgress]
 	);
 
 	// Aktualizacja postępu czytania
@@ -418,6 +322,94 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 		[isAuthenticated, user, readingProgress, readingGoal, fetchUserReadingGoal]
 	);
 
+	// Dodawanie książki do postępu czytania
+	const addBookToProgress = useCallback(
+		async (book: Book, status: ReadingStatus): Promise<boolean> => {
+			if (!isAuthenticated || !user) {
+				setProgressError('Musisz być zalogowany, aby śledzić postęp czytania.');
+				return false;
+			}
+
+			setProgressError(null);
+
+			try {
+				// Sprawdzamy, czy książka już istnieje w postępie
+				const existingProgress = readingProgress.find(
+					(p) => p.book_id === book.id
+				);
+				if (existingProgress) {
+					// Aktualizacja istniejącego wpisu
+					return await updateBookProgress(existingProgress.id, { status });
+				}
+
+				// Tworzenie nowego wpisu
+				const newProgress: Partial<ReadingProgress> = {
+					user_id: user.id,
+					book_id: book.id,
+					book_data: book,
+					status,
+					progress_percentage: status === 'completed' ? 100 : 0,
+					start_date:
+						status !== 'not_started' ? new Date().toISOString() : undefined,
+					end_date:
+						status === 'completed' ? new Date().toISOString() : undefined,
+				};
+
+				const { data, error } = await supabase
+					.from('reading_progress')
+					.insert(newProgress)
+					.select()
+					.single();
+
+				if (error) throw error;
+
+				if (data) {
+					// Dodanie nowego postępu do stanu
+					const formattedProgress = {
+						...data,
+						book_data:
+							typeof data.book_data === 'string'
+								? JSON.parse(data.book_data)
+								: data.book_data,
+					} as ReadingProgress;
+
+					setReadingProgress((prev) => [formattedProgress, ...prev]);
+
+					// Aktualizacja celu czytelniczego, jeśli status to "completed"
+					if (status === 'completed' && readingGoal) {
+						const pages = book.pageCount || 0;
+						await supabase.rpc('update_reading_goal_progress', {
+							goal_id_param: readingGoal.id,
+							pages_param: pages,
+						});
+
+						// Odświeżenie celu
+						fetchUserReadingGoal();
+					}
+
+					return true;
+				}
+
+				return false;
+			} catch (error) {
+				console.error(
+					'Błąd podczas dodawania książki do postępu czytania:',
+					error
+				);
+				setProgressError('Nie udało się dodać książki do postępu czytania.');
+				return false;
+			}
+		},
+		[
+			isAuthenticated,
+			user,
+			readingProgress,
+			readingGoal,
+			fetchUserReadingGoal,
+			updateBookProgress,
+		]
+	);
+
 	// Usuwanie książki z postępu czytania
 	const removeBookFromProgress = useCallback(
 		async (progressId: string): Promise<boolean> => {
@@ -450,13 +442,50 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 		[isAuthenticated, user]
 	);
 
-	// Sprawdzanie statusu czytania dla książki
-	const getBookReadingStatus = useCallback(
-		(bookId: string): ReadingStatus | null => {
-			const progress = readingProgress.find((p) => p.book_id === bookId);
-			return progress ? progress.status : null;
+	// Aktualizacja celu czytelniczego
+	const updateReadingGoal = useCallback(
+		async (
+			goalId: string,
+			goalBooks: number,
+			goalPages?: number
+		): Promise<boolean> => {
+			if (!isAuthenticated || !user) {
+				setGoalError(
+					'Musisz być zalogowany, aby zaktualizować cel czytelniczy.'
+				);
+				return false;
+			}
+
+			setGoalError(null);
+
+			try {
+				const { data, error } = await supabase
+					.from('reading_goals')
+					.update({
+						goal_books: goalBooks,
+						goal_pages: goalPages || 0,
+						updated_at: new Date().toISOString(),
+					})
+					.eq('id', goalId)
+					.eq('user_id', user.id)
+					.select()
+					.single();
+
+				if (error) throw error;
+
+				if (data) {
+					setReadingGoal(data as ReadingGoal);
+					return true;
+				}
+
+				return false;
+			} catch (error) {
+				console.error('Błąd podczas aktualizacji celu czytelniczego:', error);
+				setGoalError('Nie udało się zaktualizować celu czytelniczego.');
+				return false;
+			}
 		},
-		[readingProgress]
+		[isAuthenticated, user]
 	);
 
 	// Ustawianie celu czytelniczego
@@ -519,53 +548,7 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 				return false;
 			}
 		},
-		[isAuthenticated, user]
-	);
-
-	// Aktualizacja celu czytelniczego
-	const updateReadingGoal = useCallback(
-		async (
-			goalId: string,
-			goalBooks: number,
-			goalPages?: number
-		): Promise<boolean> => {
-			if (!isAuthenticated || !user) {
-				setGoalError(
-					'Musisz być zalogowany, aby zaktualizować cel czytelniczy.'
-				);
-				return false;
-			}
-
-			setGoalError(null);
-
-			try {
-				const { data, error } = await supabase
-					.from('reading_goals')
-					.update({
-						goal_books: goalBooks,
-						goal_pages: goalPages || 0,
-						updated_at: new Date().toISOString(),
-					})
-					.eq('id', goalId)
-					.eq('user_id', user.id)
-					.select()
-					.single();
-
-				if (error) throw error;
-
-				if (data) {
-					setReadingGoal(data as ReadingGoal);
-					return true;
-				}
-
-				return false;
-			} catch (error) {
-				console.error('Błąd podczas aktualizacji celu czytelniczego:', error);
-				setGoalError('Nie udało się zaktualizować celu czytelniczego.');
-				return false;
-			}
-		},
-		[isAuthenticated, user]
+		[isAuthenticated, user, updateReadingGoal]
 	);
 
 	// Efekty dla ładowania początkowego
@@ -602,7 +585,7 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 		getBookReadingStatus,
 
 		// Operacje na celach czytelniczych
-		setReadingGoal,
+		setReadingGoal: createReadingGoal, // Zmieniona nazwa funkcji, ale eksportujemy pod oryginalną nazwą
 		updateReadingGoal,
 
 		// Funkcje pobierające dane
