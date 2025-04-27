@@ -107,41 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 		try {
 			setIsLoading(true);
 
-			// Sprawdź, czy konto z tym adresem email już istnieje
-			const { error: signInError, data: signInData } =
-				await supabase.auth.signInWithOtp({
-					email,
-					options: {
-						shouldCreateUser: false, // Nie tworzymy użytkownika, tylko sprawdzamy czy istnieje
-					},
-				});
-
-			// Jeśli mamy błąd inny niż "User not found", zwróć go
-			if (signInError && !signInError.message.includes('User not found')) {
-				return { success: false, error: signInError.message };
-			}
-
-			// Jeśli użytkownik istnieje i ma status deleted, usuń zablokowaną rejestrację tego konta
-			// To najbliższe co możemy zrobić bez API backendu - wysyłamy link do resetowania hasła
-			if (signInData && !signInError) {
-				const { data: userData, error: userError } =
-					await supabase.auth.admin.getUserById(signInData.user?.id || '');
-
-				if (userData?.user?.user_metadata?.account_status === 'deleted') {
-					// To konto zostało wcześniej usunięte - możemy wysłać email z resetem hasła
-					// Zazwyczaj potrzebujemy administratorskiego API, ale dla celów testowych
-					// możemy wysłać reset hasła, co pozwoli użytkownikowi na ponowne używanie adresu email
-
-					const { error: resetError } =
-						await supabase.auth.resetPasswordForEmail(email);
-					if (resetError) {
-						console.error('Nie udało się zresetować hasła:', resetError);
-						// Kontynuujemy mimo to, próbując normalnej rejestracji
-					}
-				}
-			}
-
-			// Zwykła rejestracja
+			// Bezpośrednia rejestracja bez sprawdzania czy konto istnieje
 			const { error: signUpError, data } = await supabase.auth.signUp({
 				email,
 				password,
@@ -153,34 +119,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 			});
 
 			if (signUpError) {
-				// Jeśli błąd to "User already registered", możemy spróbować ponownie z nowym hasłem
-				if (
-					signUpError.message.includes('already registered') ||
-					signUpError.message.includes('already exists')
-				) {
-					const { error: resetPwdError } =
-						await supabase.auth.resetPasswordForEmail(email);
-
-					if (resetPwdError) {
-						return {
-							success: false,
-							error:
-								'Ten adres email jest już używany i nie można go ponownie zarejestrować.',
-						};
-					}
-
-					return {
-						success: false,
-						error:
-							'Ten adres email jest już używany. Sprawdź swoją skrzynkę email, aby zresetować hasło i ponownie aktywować konto.',
-					};
-				}
-
 				return { success: false, error: signUpError.message };
 			}
 
-			// Create a profile entry in the profiles table
+			// Jeśli rejestracja powiodła się, próbuj utworzyć profil użytkownika
 			if (data.user) {
+				// Można to pominąć, jeśli nadal występuje błąd RLS
 				const { error: profileError } = await supabase.from('profiles').insert({
 					id: data.user.id,
 					username: username || email.split('@')[0],
@@ -188,8 +132,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 				});
 
 				if (profileError) {
-					// This is not a critical error - the user is still created
 					console.error('Error creating profile:', profileError);
+					// Kontynuujemy mimo to, profil można utworzyć później
 				}
 			}
 
