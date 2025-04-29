@@ -1,4 +1,3 @@
-// src/components/BookReviewSystem.tsx
 import React, { useState } from 'react';
 import { Book } from '../types/book';
 import { useAuth } from '../context/AuthContext';
@@ -51,8 +50,6 @@ const BookReviewSystem: React.FC<BookReviewSystemProps> = ({ book }) => {
 				await submitReview(book.id, book, rating, reviewText);
 			}
 			setIsEditing(false);
-		} catch (error) {
-			console.error('Error submitting review:', error);
 		} finally {
 			setIsSubmitting(false);
 		}
@@ -68,15 +65,12 @@ const BookReviewSystem: React.FC<BookReviewSystemProps> = ({ book }) => {
 				setRating(5);
 				setReviewText('');
 				setIsEditing(false);
-			} catch (error) {
-				console.error('Error deleting review:', error);
-			} finally {
+			}  finally {
 				setIsSubmitting(false);
 			}
 		}
 	};
 
-	// Render rating stars
 	const renderStars = (
 		currentRating: number,
 		interactive: boolean = false,
@@ -101,7 +95,6 @@ const BookReviewSystem: React.FC<BookReviewSystemProps> = ({ book }) => {
 						}}
 						onMouseEnter={(e) => {
 							if (interactive) {
-								// Highlight stars on hover
 								const stars = e.currentTarget.parentElement?.children;
 								if (stars) {
 									for (let i = 0; i < stars.length; i++) {
@@ -118,7 +111,6 @@ const BookReviewSystem: React.FC<BookReviewSystemProps> = ({ book }) => {
 						}}
 						onMouseLeave={(e) => {
 							if (interactive) {
-								// Reset to actual rating when not hovering
 								const stars = e.currentTarget.parentElement?.children;
 								if (stars) {
 									for (let i = 0; i < stars.length; i++) {
@@ -139,7 +131,6 @@ const BookReviewSystem: React.FC<BookReviewSystemProps> = ({ book }) => {
 		);
 	};
 
-	// Rating distribution bar
 	const RatingDistributionBar = () => {
 		if (!ratingSummary || ratingSummary.totalReviews === 0) return null;
 
@@ -181,7 +172,6 @@ const BookReviewSystem: React.FC<BookReviewSystemProps> = ({ book }) => {
 				<h3 className='mb-0'>Recenzje książki</h3>
 			</div>
 			<div className='card-body'>
-				{/* Rating Summary */}
 				{ratingSummary && (
 					<div className='row mb-4'>
 						<div className='col-md-4 text-center'>
@@ -214,7 +204,6 @@ const BookReviewSystem: React.FC<BookReviewSystemProps> = ({ book }) => {
 					</div>
 				)}
 
-				{/* User Review Form */}
 				{isAuthenticated ? (
 					userReview && !isEditing ? (
 						<div className='card mb-4 bg-light'>
@@ -332,7 +321,6 @@ const BookReviewSystem: React.FC<BookReviewSystemProps> = ({ book }) => {
 					</div>
 				)}
 
-				{/* Other Users' Reviews */}
 				<h4 className='mb-3'>Wszystkie recenzje</h4>
 
 				{isLoadingReviews ? (
@@ -352,7 +340,6 @@ const BookReviewSystem: React.FC<BookReviewSystemProps> = ({ book }) => {
 				) : (
 					<div className='review-list'>
 						{bookReviews
-							// Don't show user's own review twice
 							.filter((review) => !user || review.user_id !== user.id)
 							.map((review) => (
 								<div key={review.id} className='card mb-3'>

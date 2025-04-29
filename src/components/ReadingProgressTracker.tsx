@@ -30,7 +30,6 @@ const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
 	const [isProcessing, setIsProcessing] = useState(false);
 	const [progressId, setProgressId] = useState<string | null>(null);
 
-	// Pobieranie aktualnego statusu książki po załadowaniu
 	useEffect(() => {
 		if (book && readingProgress.length > 0) {
 			const bookProgress = readingProgress.find((p) => p.book_id === book.id);
@@ -48,7 +47,6 @@ const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
 		}
 	}, [book, readingProgress]);
 
-	// Dodawanie książki do śledzenia
 	const handleAddToTracking = async (newStatus: ReadingStatus) => {
 		if (!isAuthenticated) {
 			navigate('/login', { state: { from: { pathname: `/book/${book.id}` } } });
@@ -71,14 +69,12 @@ const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
 		}
 	};
 
-	// Aktualizacja postępu
 	const handleUpdateProgress = async (e: React.FormEvent) => {
 		e.preventDefault();
 		if (!isAuthenticated || !progressId) return;
 
 		setIsProcessing(true);
 		try {
-			// Określamy nowy status na podstawie postępu
 			let newStatus: ReadingStatus = status as ReadingStatus;
 			if (progress === 100) {
 				newStatus = 'completed';
@@ -103,7 +99,6 @@ const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
 		}
 	};
 
-	// Usunięcie książki ze śledzenia
 	const handleRemoveFromTracking = async () => {
 		if (!isAuthenticated || !progressId) return;
 
@@ -129,7 +124,6 @@ const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
 		}
 	};
 
-	// Renderowanie statusu książki
 	const renderStatusBadge = (status: ReadingStatus | null) => {
 		if (!status) return null;
 
@@ -163,7 +157,6 @@ const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
 		);
 	};
 
-	// Ikona statusu
 	const getStatusIcon = (status: ReadingStatus | null) => {
 		switch (status) {
 			case 'not_started':
@@ -179,13 +172,11 @@ const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
 		}
 	};
 
-	// Konwersja procentu ukończenia na strony
 	const percentToPages = (percent: number) => {
 		if (!book.pageCount) return 0;
 		return Math.round((percent / 100) * book.pageCount);
 	};
 
-	// Konwersja strony na procent ukończenia
 	const pageToPercent = (page: number) => {
 		if (!book.pageCount || page > book.pageCount) return 100;
 		return Math.round((page / book.pageCount) * 100);
@@ -247,7 +238,6 @@ const ReadingProgressTracker: React.FC<ReadingProgressTrackerProps> = ({
 							</div>
 						</div>
 
-						{/* Progress bar */}
 						<div className='mb-3'>
 							<div className='d-flex justify-content-between align-items-center mb-1'>
 								<small>Postęp: {progress}%</small>

@@ -1,4 +1,3 @@
-// src/components/ExchangeOfferList.tsx
 import React from 'react';
 import { ExchangeOffer } from '../types/book';
 import { useNavigate } from 'react-router-dom';
@@ -144,7 +143,6 @@ const ExchangeOfferList: React.FC<ExchangeOfferListProps> = ({
 						</div>
 
 						<div>
-							{/* Kontrolki dla właściciela oferty */}
 							{showControls && user && offer.user_id === user.id ? (
 								<div className='btn-group'>
 									<button
@@ -167,7 +165,7 @@ const ExchangeOfferList: React.FC<ExchangeOfferListProps> = ({
 										<i className='fas fa-trash'></i>
 									</button>
 								</div>
-							) : /* Przycisk kontaktu dla innych użytkowników */
+							) :
 							user && offer.user_id !== user.id && offer.active ? (
 								<button
 									className='btn btn-primary'

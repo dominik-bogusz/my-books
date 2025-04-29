@@ -10,6 +10,21 @@ import supabase from '../lib/supabase';
 const UserProfile: React.FC = () => {
 	const { id } = useParams<{ id: string }>();
 	const { user, isAuthenticated } = useAuth();
+	const [profileData, setProfileData] = useState<any>(null);
+	const [isLoading, setIsLoading] = useState(true);
+	const [error, setError] = useState<string | null>(null);
+	const [favoriteBooks, setFavoriteBooks] = useState<Book[]>([]);
+	const [readingList, setReadingList] = useState<Book[]>([]);
+	const [loadingBooks, setLoadingBooks] = useState(false);
+	const [booksError, setBooksError] = useState<string | null>(null);
+	const [allUsers, setAllUsers] = useState([]);
+	const [isLoadingUsers, setIsLoadingUsers] = useState(false);
+	const [searchQuery, setSearchQuery] = useState('');
+	const [searchResults, setSearchResults] = useState([]);
+	const [isSearching, setIsSearching] = useState(false);
+	const [activeTab, setActiveTab] = useState<
+		'activity' | 'books' | 'followers' | 'following'
+	>('activity');
 	const {
 		followUser,
 		unfollowUser,
@@ -22,23 +37,6 @@ const UserProfile: React.FC = () => {
 		fetchUserFollowers,
 		fetchUserFollowing,
 	} = useSocial();
-
-	const [profileData, setProfileData] = useState<any>(null);
-	const [isLoading, setIsLoading] = useState(true);
-	const [error, setError] = useState<string | null>(null);
-	const [activeTab, setActiveTab] = useState<
-		'activity' | 'books' | 'followers' | 'following'
-	>('activity');
-
-	const [favoriteBooks, setFavoriteBooks] = useState<Book[]>([]);
-	const [readingList, setReadingList] = useState<Book[]>([]);
-	const [loadingBooks, setLoadingBooks] = useState(false);
-	const [booksError, setBooksError] = useState<string | null>(null);
-	const [allUsers, setAllUsers] = useState([]);
-	const [isLoadingUsers, setIsLoadingUsers] = useState(false);
-	const [searchQuery, setSearchQuery] = useState('');
-	const [searchResults, setSearchResults] = useState([]);
-	const [isSearching, setIsSearching] = useState(false);
 
 	const handleSearch = async () => {
 		if (!searchQuery.trim()) return;
@@ -69,12 +67,11 @@ const UserProfile: React.FC = () => {
 				const { data, error } = await supabase
 					.from('profiles')
 					.select('*')
-					.limit(20) // Limit do 20 użytkowników dla wydajności
+					.limit(20)
 					.order('created_at', { ascending: false });
 
 				if (error) throw error;
 
-				// Filtruj bieżącego użytkownika z listy jeśli jest zalogowany
 				const filteredUsers = user
 					? data.filter((profile) => profile.id !== user.id)
 					: data;
@@ -91,7 +88,6 @@ const UserProfile: React.FC = () => {
 			fetchAllUsers();
 		}
 	}, [isAuthenticated, user, activeTab]);
-	// Pobieranie danych profilu
 	useEffect(() => {
 		const fetchProfile = async () => {
 			if (!id) return;
@@ -104,7 +100,6 @@ const UserProfile: React.FC = () => {
 
 				if (profileData) {
 					setProfileData(profileData);
-					// Pobieranie obserwujących i obserwowanych
 					fetchUserFollowers(id);
 					fetchUserFollowing(id);
 				} else {
@@ -121,7 +116,6 @@ const UserProfile: React.FC = () => {
 		fetchProfile();
 	}, [id, fetchUserProfile, fetchUserFollowers, fetchUserFollowing]);
 
-	// Pobieranie książek użytkownika
 	useEffect(() => {
 		const fetchUserBooks = async () => {
 			if (!id) return;
@@ -130,7 +124,6 @@ const UserProfile: React.FC = () => {
 			setBooksError(null);
 
 			try {
-				// Pobieranie ulubionych książek
 				const { data: favoritesData, error: favoritesError } = await supabase
 					.from('favorites')
 					.select('book_id, book_data')
@@ -138,7 +131,6 @@ const UserProfile: React.FC = () => {
 
 				if (favoritesError) throw favoritesError;
 
-				// Pobieranie listy do przeczytania
 				const { data: readingData, error: readingError } = await supabase
 					.from('reading_list')
 					.select('book_id, book_data')
@@ -146,7 +138,6 @@ const UserProfile: React.FC = () => {
 
 				if (readingError) throw readingError;
 
-				// Przetwarzanie danych
 				if (favoritesData) {
 					const books = favoritesData
 						.map((item) => {
@@ -187,7 +178,6 @@ const UserProfile: React.FC = () => {
 		}
 	}, [id, activeTab]);
 
-	// Obsługa obserwowania/zaprzestania obserwowania
 	const handleFollowToggle = async () => {
 		if (!isAuthenticated || !id) return;
 
@@ -199,13 +189,12 @@ const UserProfile: React.FC = () => {
 			}
 		} catch (error) {
 			console.error(
-				'Błąd podczas obserwowania/przestania obserwowania:',
+				'Błąd podczas obserwowania',
 				error
 			);
 		}
 	};
 
-	// Obsługa błędów ładowania
 	if (isLoading) {
 		return (
 			<div className='container py-5 text-center'>
@@ -235,11 +224,9 @@ const UserProfile: React.FC = () => {
 	return (
 		<div className='container py-5'>
 			<div className='row'>
-				{/* Sekcja boczna z informacjami o profilu */}
 				<div className='col-lg-4 mb-4'>
 					<div className='card shadow-sm'>
 						<div className='card-body text-center'>
-							{/* Avatar użytkownika */}
 							<div className='mb-3'>
 								{profileData.avatar_url ? (
 									<img
@@ -266,7 +253,6 @@ const UserProfile: React.FC = () => {
 								)}
 							</div>
 
-							{/* Informacje o profilu */}
 							<h3 className='card-title mb-1'>{profileData.username}</h3>
 							{profileData.bio && (
 								<p className='text-muted mb-3'>{profileData.bio}</p>
@@ -303,7 +289,6 @@ const UserProfile: React.FC = () => {
 												</div>
 											</div>
 										) : searchQuery ? (
-											// Pokazuj wyniki wyszukiwania, jeśli szukano
 											<div className='list-group'>
 												{searchResults.map((user) => (
 													<Link
@@ -311,8 +296,6 @@ const UserProfile: React.FC = () => {
 														to={`/user/${user.id}`}
 														className='list-group-item list-group-item-action d-flex align-items-center'
 													>
-														{/* Avatar i dane użytkownika */}
-														{/* ... kod jak wcześniej ... */}
 													</Link>
 												))}
 
@@ -325,7 +308,6 @@ const UserProfile: React.FC = () => {
 												)}
 											</div>
 										) : (
-											// Pokazuj wszystkich użytkowników, jeśli nie szukano
 											<div className='list-group'>
 												{isLoadingUsers ? (
 													<div className='text-center py-3'>
@@ -389,12 +371,9 @@ const UserProfile: React.FC = () => {
 											</div>
 										)}
 									</div>
-
-									{/* Reszta zawartości zakładki społecznościowej */}
 								</>
 							)}
 
-							{/* Statystyki */}
 							<div className='d-flex justify-content-around mb-3 text-center'>
 								<div className='px-3'>
 									<h5 className='mb-0'>{profileData.followers_count || 0}</h5>
@@ -406,7 +385,6 @@ const UserProfile: React.FC = () => {
 								</div>
 							</div>
 
-							{/* Przycisk obserwowania */}
 							{isAuthenticated && user?.id !== id && (
 								<div className='d-grid'>
 									<button
@@ -433,9 +411,7 @@ const UserProfile: React.FC = () => {
 					</div>
 				</div>
 
-				{/* Główna treść - aktywności, książki, obserwujący, obserwowani */}
 				<div className='col-lg-8'>
-					{/* Nawigacja zakładek */}
 					<ul className='nav nav-tabs mb-4'>
 						<li className='nav-item'>
 							<button
@@ -481,7 +457,6 @@ const UserProfile: React.FC = () => {
 						</li>
 					</ul>
 
-					{/* Zawartość zakładek */}
 					{activeTab === 'activity' && (
 						<div className='activity-tab'>
 							<h4 className='mb-3'>Aktywność użytkownika</h4>

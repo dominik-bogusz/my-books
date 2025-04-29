@@ -16,9 +16,6 @@ interface UseSearchReturn {
 
 const RESULTS_PER_PAGE = 20;
 
-/**
- * Hook for searching books through the Google Books API
- */
 const useSearch = (): UseSearchReturn => {
 	const [books, setBooks] = useState<Book[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
@@ -67,7 +64,6 @@ const useSearch = (): UseSearchReturn => {
 					publisher: item.volumeInfo.publisher,
 				}));
 
-				// Sort books so those with thumbnails appear first
 				const sortedBooks = formattedBooks.sort((a, b) => {
 					if (a.imageLinks?.thumbnail && !b.imageLinks?.thumbnail) return -1;
 					if (!a.imageLinks?.thumbnail && b.imageLinks?.thumbnail) return 1;
@@ -76,7 +72,6 @@ const useSearch = (): UseSearchReturn => {
 
 				setBooks(sortedBooks);
 
-				// Handle cases where the API returns fewer items than expected
 				if (
 					response.items.length < RESULTS_PER_PAGE &&
 					startIndex + RESULTS_PER_PAGE >= response.totalItems

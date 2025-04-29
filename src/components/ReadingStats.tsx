@@ -1,4 +1,3 @@
-// src/components/ReadingStats.tsx
 import React, { useEffect } from 'react';
 import { ReadingStats as ReadingStatsType } from '../types/reading';
 import useReadingProgress from '../hooks/useReadingProgress';
@@ -14,7 +13,6 @@ const ReadingStats: React.FC<ReadingStatsProps> = ({
 	isLoading,
 	error,
 }) => {
-	// Dodajemy bezpośredni hook do pobierania danych - to rozwiąże problem w niezależnym widoku
 	const {
 		readingStats: localStats,
 		isLoadingStats: localLoading,
@@ -23,13 +21,11 @@ const ReadingStats: React.FC<ReadingStatsProps> = ({
 	} = useReadingProgress();
 
 	useEffect(() => {
-		// Pobieramy dane gdy komponent jest inicjalizowany samodzielnie
 		if (!stats && !isLoading) {
 			fetchUserReadingStats();
 		}
 	}, [stats, isLoading, fetchUserReadingStats]);
 
-	// Używamy przekazanych props lub danych lokalnych jeśli props są puste
 	const displayStats = stats || localStats;
 	const displayLoading = isLoading || localLoading;
 	const displayError = error || localError;
@@ -63,7 +59,6 @@ const ReadingStats: React.FC<ReadingStatsProps> = ({
 		);
 	}
 
-	// Formatowanie daty dla wykresu miesięcznego
 	const formatMonthName = (monthStr: string) => {
 		const [year, month] = monthStr.split('-');
 		const date = new Date(parseInt(year), parseInt(month) - 1, 1);
@@ -73,22 +68,8 @@ const ReadingStats: React.FC<ReadingStatsProps> = ({
 		});
 	};
 
-	// Obliczanie procentowego ukończenia celu rocznego
-	const currentYear = new Date().getFullYear();
-	const daysInYear =
-		new Date(currentYear, 11, 31).getDate() +
-		365 -
-		new Date(currentYear, 11, 31).getDay();
-	const dayOfYear =
-		Math.floor(
-			(new Date().getTime() - new Date(currentYear, 0, 1).getTime()) /
-				(24 * 60 * 60 * 1000)
-		) + 1;
-	const yearProgress = (dayOfYear / daysInYear) * 100;
-
 	return (
 		<div className='reading-stats'>
-			{/* Statystyki ogólne */}
 			<div className='row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 mb-4'>
 				<div className='col'>
 					<div className='card h-100'>
@@ -127,7 +108,6 @@ const ReadingStats: React.FC<ReadingStatsProps> = ({
 				</div>
 			</div>
 
-			{/* Średni czas ukończenia książki */}
 			<div className='card mb-4'>
 				<div className='card-header'>
 					<h5 className='mb-0'>Średni czas ukończenia książki</h5>
@@ -149,7 +129,6 @@ const ReadingStats: React.FC<ReadingStatsProps> = ({
 				</div>
 			</div>
 
-			{/* Ulubione gatunki */}
 			<div className='card mb-4'>
 				<div className='card-header'>
 					<h5 className='mb-0'>Ulubione gatunki</h5>
@@ -217,7 +196,6 @@ const ReadingStats: React.FC<ReadingStatsProps> = ({
 				</div>
 			</div>
 
-			{/* Aktywność czytelnicza w miesiącach */}
 			<div className='card mb-4'>
 				<div className='card-header'>
 					<h5 className='mb-0'>Aktywność czytelnicza</h5>
@@ -225,7 +203,6 @@ const ReadingStats: React.FC<ReadingStatsProps> = ({
 				<div className='card-body'>
 					{displayStats.reading_by_month.length > 0 ? (
 						<div className='chart-container' style={{ height: '300px' }}>
-							{/* Wizualizacja danych aktywności czytelniczej */}
 							<div className='d-flex align-items-end justify-content-between h-100'>
 								{displayStats.reading_by_month
 									.slice(-12)
@@ -278,7 +255,6 @@ const ReadingStats: React.FC<ReadingStatsProps> = ({
 				</div>
 			</div>
 
-			{/* Ostatnio ukończone książki */}
 			<div className='card'>
 				<div className='card-header'>
 					<h5 className='mb-0'>Ostatnio ukończone książki</h5>

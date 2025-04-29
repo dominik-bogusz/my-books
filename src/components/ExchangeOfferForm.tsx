@@ -1,4 +1,3 @@
-// src/components/ExchangeOfferForm.tsx
 import React, { useState } from 'react';
 import { Book, BookCondition, ExchangeType } from '../types/book';
 import useExchange from '../hooks/useExchange';

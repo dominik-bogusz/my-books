@@ -13,7 +13,6 @@ const PopularBooks: React.FC = () => {
 			setIsLoading(true);
 			setError(null);
 			try {
-				// Wyszukiwanie książek o tematyce fantasy jako przykład popularnych książek
 				const response = await searchBooks('fantasy', 8);
 
 				if (response.items && response.items.length > 0) {
@@ -27,18 +26,9 @@ const PopularBooks: React.FC = () => {
 						publisher: item.volumeInfo.publisher,
 					}));
 					setBooks(formattedBooks);
-				} else {
-					// Jeśli nie ma wyników, ustawiamy przykładowe dane
-					console.log('Brak wyników z API, używam przykładowych danych');
-					setBooks(getSampleBooks());
 				}
 			} catch (error) {
-				console.error('Błąd podczas pobierania popularnych książek:', error);
-				setError(
-					'Nie udało się załadować książek. Wyświetlamy przykładowe dane.'
-				);
-				// W przypadku błędu, również wyświetlamy przykładowe dane
-				setBooks(getSampleBooks());
+				console.error('Błąd podczas pobierania książek:', error);
 			} finally {
 				setIsLoading(false);
 			}
@@ -46,56 +36,6 @@ const PopularBooks: React.FC = () => {
 
 		fetchPopularBooks();
 	}, []);
-
-	// Funkcja zwracająca przykładowe dane książek na wypadek problemów z API
-	const getSampleBooks = (): Book[] => {
-		return [
-			{
-				id: 'sample1',
-				title: 'Hobbit',
-				authors: ['J.R.R. Tolkien'],
-				description:
-					'Opowieść o niespodziewanej podróży Bilbo Bagginsa. Hobbit to istota większa od liliputa, mniejsza jednak od karła. Hobbici nie noszą butów, bo ich stopy pokrywa gruba warstwa włosków, podobnych do tych, które rosną im na głowie, zawsze kędzierzawych.',
-				publishedDate: '1937',
-				imageLinks: {
-					thumbnail: 'https://covers.openlibrary.org/b/id/8406786-M.jpg',
-				},
-			},
-			{
-				id: 'sample2',
-				title: 'Harry Potter i Kamień Filozoficzny',
-				authors: ['J.K. Rowling'],
-				description:
-					"Pierwszy tom przygód młodego czarodzieja Harry'ego Pottera. W dniu jedenastych urodzin Harry dowiaduje się, że jest czarodziejem i zostaje przyjęty do Szkoły Magii i Czarodziejstwa w Hogwarcie.",
-				publishedDate: '1997',
-				imageLinks: {
-					thumbnail: 'https://covers.openlibrary.org/b/id/12000553-M.jpg',
-				},
-			},
-			{
-				id: 'sample3',
-				title: 'Duma i uprzedzenie',
-				authors: ['Jane Austen'],
-				description:
-					'Klasyczna powieść o miłości i społeczeństwie. Opowiada historię Elizabeth Bennet, która musi poradzić sobie z kwestiami moralności, wychowania, uprzedzeń i znaleźć miłość pomimo dumy.',
-				publishedDate: '1813',
-				imageLinks: {
-					thumbnail: 'https://covers.openlibrary.org/b/id/12645114-M.jpg',
-				},
-			},
-			{
-				id: 'sample4',
-				title: 'Zbrodnia i kara',
-				authors: ['Fiodor Dostojewski'],
-				description:
-					'Powieść psychologiczna o zbrodni i jej konsekwencjach. Główny bohater, Rodion Raskolnikow, to były student prawa, który popełnia morderstwo, a następnie musi zmierzyć się z własnymi wyrzutami sumienia.',
-				publishedDate: '1866',
-				imageLinks: {
-					thumbnail: 'https://covers.openlibrary.org/b/id/8406040-M.jpg',
-				},
-			},
-		];
-	};
 
 	return (
 		<div className='container'>

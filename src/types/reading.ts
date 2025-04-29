@@ -1,4 +1,3 @@
-// src/types/reading.ts
 import { Book } from './book';
 
 export type ReadingStatus =
@@ -13,7 +12,7 @@ export interface ReadingProgress {
 	book_id: string;
 	book_data: Book;
 	status: ReadingStatus;
-	progress_percentage: number; // 0-100
+	progress_percentage: number;
 	current_page?: number;
 	start_date?: string;
 	end_date?: string;

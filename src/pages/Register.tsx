@@ -16,7 +16,6 @@ const Register: React.FC = () => {
 		e.preventDefault();
 		setError(null);
 
-		// Validate inputs
 		if (!email.trim() || !password.trim() || !confirmPassword.trim()) {
 			setError('Proszę wypełnić wszystkie wymagane pola');
 			return;
@@ -43,7 +42,7 @@ const Register: React.FC = () => {
 			}
 		} catch (err) {
 			setError('Wystąpił nieoczekiwany błąd. Spróbuj ponownie później.');
-			console.error('Registration error:', err);
+			console.error('Błąd rejestracji:', err);
 		} finally {
 			setIsSubmitting(false);
 		}

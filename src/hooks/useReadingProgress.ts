@@ -1,4 +1,3 @@
-// src/hooks/useReadingProgress.ts
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import supabase from '../lib/supabase';
@@ -11,7 +10,6 @@ import {
 } from '../types/reading';
 
 interface UseReadingProgressReturn {
-	// Stan
 	readingProgress: ReadingProgress[];
 	readingGoal: ReadingGoal | null;
 	readingStats: ReadingStats | null;
@@ -22,7 +20,6 @@ interface UseReadingProgressReturn {
 	goalError: string | null;
 	statsError: string | null;
 
-	// Operacje na postępie czytania
 	addBookToProgress: (book: Book, status: ReadingStatus) => Promise<boolean>;
 	updateBookProgress: (
 		progressId: string,
@@ -31,7 +28,6 @@ interface UseReadingProgressReturn {
 	removeBookFromProgress: (progressId: string) => Promise<boolean>;
 	getBookReadingStatus: (bookId: string) => ReadingStatus | null;
 
-	// Operacje na celach czytelniczych
 	setReadingGoal: (
 		year: number,
 		goalBooks: number,
@@ -43,7 +39,6 @@ interface UseReadingProgressReturn {
 		goalPages?: number
 	) => Promise<boolean>;
 
-	// Funkcje pobierające dane
 	fetchUserReadingProgress: (userId?: string) => Promise<void>;
 	fetchUserReadingGoal: (userId?: string, year?: number) => Promise<void>;
 	fetchUserReadingStats: (userId?: string) => Promise<void>;
@@ -52,22 +47,18 @@ interface UseReadingProgressReturn {
 export const useReadingProgress = (): UseReadingProgressReturn => {
 	const { user, isAuthenticated } = useAuth();
 
-	// Stan dla postępu czytania
 	const [readingProgress, setReadingProgress] = useState<ReadingProgress[]>([]);
 	const [isLoadingProgress, setIsLoadingProgress] = useState(false);
 	const [progressError, setProgressError] = useState<string | null>(null);
 
-	// Stan dla celów czytelniczych
 	const [readingGoal, setReadingGoal] = useState<ReadingGoal | null>(null);
 	const [isLoadingGoal, setIsLoadingGoal] = useState(false);
 	const [goalError, setGoalError] = useState<string | null>(null);
 
-	// Stan dla statystyk czytelniczych
 	const [readingStats, setReadingStats] = useState<ReadingStats | null>(null);
 	const [isLoadingStats, setIsLoadingStats] = useState(false);
 	const [statsError, setStatsError] = useState<string | null>(null);
 
-	// Pobieranie postępu czytania dla użytkownika
 	const fetchUserReadingProgress = useCallback(
 		async (userId?: string) => {
 			const targetUserId = userId || (user ? user.id : null);
@@ -106,7 +97,6 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 		[user]
 	);
 
-	// Pobieranie celu czytelniczego dla użytkownika
 	const fetchUserReadingGoal = useCallback(
 		async (userId?: string, year?: number) => {
 			const targetUserId = userId || (user ? user.id : null);
@@ -138,7 +128,6 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 		[user]
 	);
 
-	// Pobieranie statystyk czytelniczych dla użytkownika
 	const fetchUserReadingStats = useCallback(
 		async (userId?: string) => {
 			const targetUserId = userId || (user ? user.id : null);
@@ -148,7 +137,6 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 			setStatsError(null);
 
 			try {
-				// Pobieranie wszystkich postępów czytania dla użytkownika
 				const { data: progressData, error: progressError } = await supabase
 					.from('reading_progress')
 					.select('*')
@@ -156,7 +144,6 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 
 				if (progressError) throw progressError;
 
-				// Pobieranie ukończonych książek
 				const { data: completedBooks, error: completedError } = await supabase
 					.from('reading_progress')
 					.select('*')
@@ -166,26 +153,21 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 
 				if (completedError) throw completedError;
 
-				// Obliczanie statystyk ręcznie
 				let totalBooksRead = 0;
 				let totalPagesRead = 0;
 				let booksInProgress = 0;
 				let totalCompletionDays = 0;
 				let totalBooksWithDates = 0;
 
-				// Mapa do przechowywania gatunków
 				const genreMap = new Map();
 
-				// Mapa do przechowywania danych miesięcznych
 				const monthlyMap = new Map();
 
-				// Data do obliczania dni w serii
 				let currentStreak = 0;
 				let longestStreak = 0;
 				let lastCompletionDate: Date | null = null;
 
 				if (progressData) {
-					// Przetwarzaj wszystkie dane
 					progressData.forEach((item) => {
 						const bookData =
 							typeof item.book_data === 'string'
@@ -196,7 +178,6 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 							totalBooksRead++;
 							totalPagesRead += bookData.pageCount || 0;
 
-							// Obliczanie dni potrzebnych na przeczytanie książki
 							if (item.start_date && item.end_date) {
 								const startDate = new Date(item.start_date);
 								const endDate = new Date(item.end_date);
@@ -210,21 +191,17 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 								}
 							}
 
-							// Sprawdź czy jest to nowa data ukończenia do obliczenia serii
 							if (item.end_date) {
 								const completionDate = new Date(item.end_date);
 								const formattedDate = completionDate
 									.toISOString()
 									.split('T')[0];
 
-								// Dodaj do mapy miesięcznej
-								const yearMonth = formattedDate.substring(0, 7); // format YYYY-MM
+								const yearMonth = formattedDate.substring(0, 7);
 								const monthCount = monthlyMap.get(yearMonth) || 0;
 								monthlyMap.set(yearMonth, monthCount + 1);
 
-								// Obliczanie serii
 								if (lastCompletionDate) {
-									// Sprawdź czy to kolejny dzień
 									const dayDiff = Math.ceil(
 										(completionDate.getTime() - lastCompletionDate.getTime()) /
 											(1000 * 3600 * 24)
@@ -233,19 +210,16 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 									if (dayDiff === 1) {
 										currentStreak++;
 									} else if (dayDiff !== 0) {
-										// Jeśli nie ten sam dzień i nie dzień po dniu
 										currentStreak = 1;
 									}
 								} else {
 									currentStreak = 1;
 								}
 
-								// Aktualizuj najdłuższą serię
 								longestStreak = Math.max(longestStreak, currentStreak);
 								lastCompletionDate = completionDate;
 							}
 
-							// Dodaj gatunki
 							if (bookData.categories && bookData.categories.length > 0) {
 								bookData.categories.forEach((category: string) => {
 									const count = genreMap.get(category) || 0;
@@ -258,7 +232,6 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 					});
 				}
 
-				// Sprawdź, czy seria jest aktualna (czytanie w ciągu ostatnich dni)
 				let finalCurrentStreak = 0;
 				if (lastCompletionDate) {
 					const today = new Date();
@@ -268,22 +241,18 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 					);
 
 					if (daysSinceLastCompletion <= 1) {
-						// Dzisiaj lub wczoraj
 						finalCurrentStreak = currentStreak;
 					}
 				}
 
-				// Konwertuj mapę gatunków na listę posortowaną malejąco
 				const favoriteGenres = Array.from(genreMap.entries())
 					.map(([genre, count]) => ({ genre, count: count as number }))
 					.sort((a, b) => b.count - a.count);
 
-				// Konwertuj mapę miesięczną na listę
 				const monthlyData = Array.from(monthlyMap.entries())
 					.map(([month, count]) => ({ month, count: count as number }))
 					.sort((a, b) => a.month.localeCompare(b.month));
 
-				// Przygotuj dane ukończonych książek
 				const formattedCompletedBooks = completedBooks
 					? (completedBooks.map((item) => ({
 							...item,
@@ -294,13 +263,11 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 					  })) as ReadingProgress[])
 					: [];
 
-				// Oblicz średni czas ukończenia książki
 				const averageCompletionDays =
 					totalBooksWithDates > 0
 						? Math.round(totalCompletionDays / totalBooksWithDates)
 						: 0;
 
-				// Utwórz obiekt statystyk z obliczonymi wartościami
 				const formattedStats: ReadingStats = {
 					total_books_read: totalBooksRead,
 					total_pages_read: totalPagesRead,
@@ -327,7 +294,6 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 		[user]
 	);
 
-	// Sprawdzanie statusu czytania dla książki
 	const getBookReadingStatus = useCallback(
 		(bookId: string): ReadingStatus | null => {
 			const progress = readingProgress.find((p) => p.book_id === bookId);
@@ -336,7 +302,6 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 		[readingProgress]
 	);
 
-	// Aktualizacja postępu czytania
 	const updateBookProgress = useCallback(
 		async (
 			progressId: string,
@@ -362,10 +327,8 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 					return false;
 				}
 
-				// Przygotowanie danych aktualizacji
 				const updateData: Partial<ReadingProgress> = { ...updates };
 
-				// Automatyczne ustawianie dat
 				if (updates.status) {
 					if (updates.status === 'in_progress' && !currentProgress.start_date) {
 						updateData.start_date = new Date().toISOString();
@@ -396,12 +359,10 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 								: data.book_data,
 					} as ReadingProgress;
 
-					// Aktualizacja stanu
 					setReadingProgress((prev) =>
 						prev.map((p) => (p.id === progressId ? formattedProgress : p))
 					);
 
-					// Aktualizacja celu czytelniczego, jeśli status zmienił się na "completed"
 					if (
 						updates.status === 'completed' &&
 						currentProgress.status !== 'completed' &&
@@ -413,7 +374,6 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 							pages_param: pages,
 						});
 
-						// Odświeżenie celu
 						fetchUserReadingGoal();
 					}
 
@@ -430,7 +390,6 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 		[isAuthenticated, user, readingProgress, readingGoal, fetchUserReadingGoal]
 	);
 
-	// Dodawanie książki do postępu czytania
 	const addBookToProgress = useCallback(
 		async (book: Book, status: ReadingStatus): Promise<boolean> => {
 			if (!isAuthenticated || !user) {
@@ -441,16 +400,13 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 			setProgressError(null);
 
 			try {
-				// Sprawdzamy, czy książka już istnieje w postępie
 				const existingProgress = readingProgress.find(
 					(p) => p.book_id === book.id
 				);
 				if (existingProgress) {
-					// Aktualizacja istniejącego wpisu
 					return await updateBookProgress(existingProgress.id, { status });
 				}
 
-				// Tworzenie nowego wpisu
 				const newProgress: Partial<ReadingProgress> = {
 					user_id: user.id,
 					book_id: book.id,
@@ -472,7 +428,6 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 				if (error) throw error;
 
 				if (data) {
-					// Dodanie nowego postępu do stanu
 					const formattedProgress = {
 						...data,
 						book_data:
@@ -483,7 +438,6 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 
 					setReadingProgress((prev) => [formattedProgress, ...prev]);
 
-					// Aktualizacja celu czytelniczego, jeśli status to "completed"
 					if (status === 'completed' && readingGoal) {
 						const pages = book.pageCount || 0;
 						await supabase.rpc('update_reading_goal_progress', {
@@ -491,7 +445,6 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 							pages_param: pages,
 						});
 
-						// Odświeżenie celu
 						fetchUserReadingGoal();
 					}
 
@@ -518,7 +471,6 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 		]
 	);
 
-	// Usuwanie książki z postępu czytania
 	const removeBookFromProgress = useCallback(
 		async (progressId: string): Promise<boolean> => {
 			if (!isAuthenticated || !user) {
@@ -537,7 +489,6 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 
 				if (error) throw error;
 
-				// Aktualizacja stanu
 				setReadingProgress((prev) => prev.filter((p) => p.id !== progressId));
 
 				return true;
@@ -550,7 +501,6 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 		[isAuthenticated, user]
 	);
 
-	// Aktualizacja celu czytelniczego
 	const updateReadingGoal = useCallback(
 		async (
 			goalId: string,
@@ -596,7 +546,6 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 		[isAuthenticated, user]
 	);
 
-	// Ustawianie celu czytelniczego
 	const createReadingGoal = useCallback(
 		async (
 			year: number,
@@ -611,7 +560,6 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 			setGoalError(null);
 
 			try {
-				// Sprawdzamy, czy cel na dany rok już istnieje
 				const { data: existingGoal, error: checkError } = await supabase
 					.from('reading_goals')
 					.select('id')
@@ -622,11 +570,9 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 				if (checkError) throw checkError;
 
 				if (existingGoal) {
-					// Aktualizacja istniejącego celu
 					return await updateReadingGoal(existingGoal.id, goalBooks, goalPages);
 				}
 
-				// Tworzenie nowego celu
 				const newGoal = {
 					user_id: user.id,
 					year,
@@ -659,7 +605,6 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 		[isAuthenticated, user, updateReadingGoal]
 	);
 
-	// Efekty dla ładowania początkowego
 	useEffect(() => {
 		if (isAuthenticated && user) {
 			fetchUserReadingProgress();
@@ -675,7 +620,6 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 	]);
 
 	return {
-		// Stan
 		readingProgress,
 		readingGoal,
 		readingStats,
@@ -686,17 +630,14 @@ export const useReadingProgress = (): UseReadingProgressReturn => {
 		goalError,
 		statsError,
 
-		// Operacje na postępie czytania
 		addBookToProgress,
 		updateBookProgress,
 		removeBookFromProgress,
 		getBookReadingStatus,
 
-		// Operacje na celach czytelniczych
-		setReadingGoal: createReadingGoal, // Zmieniona nazwa funkcji, ale eksportujemy pod oryginalną nazwą
+		setReadingGoal: createReadingGoal,
 		updateReadingGoal,
 
-		// Funkcje pobierające dane
 		fetchUserReadingProgress,
 		fetchUserReadingGoal,
 		fetchUserReadingStats,

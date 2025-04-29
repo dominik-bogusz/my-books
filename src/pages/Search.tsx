@@ -23,23 +23,18 @@ const Search = () => {
 
 	useEffect(() => {
 		if (query && query !== currentQuery) {
-			// Reset to page 1 when query changes
 			setCurrentPage(1);
 			search(query, 0);
 		} else if (query && books.length === 0) {
-			// If there's a query but no books (e.g., on first load), perform search
 			search(query, (currentPage - 1) * resultsPerPage);
 		}
 	}, [query, search, currentQuery, books.length, currentPage, setCurrentPage]);
 
-	// Pagination handlers
 	const handleNextPage = () => {
 		if (currentPage * resultsPerPage < totalResults) {
 			const nextPage = currentPage + 1;
 			setCurrentPage(nextPage);
 			search(currentQuery, (nextPage - 1) * resultsPerPage);
-
-			// Scroll to top of results
 			window.scrollTo({
 				top: 0,
 				behavior: 'smooth',
@@ -53,7 +48,6 @@ const Search = () => {
 			setCurrentPage(prevPage);
 			search(currentQuery, (prevPage - 1) * resultsPerPage);
 
-			// Scroll to top of results
 			window.scrollTo({
 				top: 0,
 				behavior: 'smooth',
@@ -61,7 +55,6 @@ const Search = () => {
 		}
 	};
 
-	// Use currentQuery from context (which persists) instead of local state
 	const displayQuery = currentQuery || query;
 
 	return (
@@ -86,7 +79,6 @@ const Search = () => {
 				emptyMessage={`Brak wyników dla "${displayQuery}". Spróbuj innego zapytania.`}
 			/>
 
-			{/* Pagination */}
 			{books.length > 0 && !isLoading && (
 				<div className='d-flex justify-content-center mt-4 mb-3'>
 					<div className='btn-group'>

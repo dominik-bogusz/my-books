@@ -1,6 +1,5 @@
-// src/components/ExchangeMessageSystem.tsx
 import React, { useState, useEffect, useRef } from 'react';
-import { ExchangeOffer, ExchangeMessage } from '../types/book';
+import { ExchangeOffer } from '../types/book';
 import { useAuth } from '../context/AuthContext';
 import useExchange from '../hooks/useExchange';
 
@@ -29,19 +28,16 @@ const ExchangeMessageSystem: React.FC<ExchangeMessageSystemProps> = ({
 	const [exchangeRequested, setExchangeRequested] = useState(false);
 	const messagesEndRef = useRef<HTMLDivElement>(null);
 
-	// Fetch messages when component mounts
 	useEffect(() => {
 		if (offer && offer.id) {
 			fetchOfferMessages(offer.id);
 		}
 	}, [offer, fetchOfferMessages]);
 
-	// Scroll to bottom when messages change
 	useEffect(() => {
 		scrollToBottom();
 	}, [exchangeMessages]);
 
-	// Mark messages as read when they appear
 	useEffect(() => {
 		if (user && exchangeMessages.length > 0) {
 			exchangeMessages.forEach((message) => {
@@ -66,10 +62,9 @@ const ExchangeMessageSystem: React.FC<ExchangeMessageSystemProps> = ({
 
 			if (success) {
 				setNewMessage('');
-				// Messages will be updated automatically via state
 			}
 		} catch (error) {
-			console.error('Error sending message:', error);
+			console.error('Błąd przy wysyłaniu:', error);
 		} finally {
 			setSending(false);
 		}
@@ -85,7 +80,7 @@ const ExchangeMessageSystem: React.FC<ExchangeMessageSystemProps> = ({
 				if (onRequestExchange) onRequestExchange();
 			}
 		} catch (error) {
-			console.error('Error requesting exchange:', error);
+			console.error('Błąd:', error);
 		}
 	};
 
@@ -93,16 +88,13 @@ const ExchangeMessageSystem: React.FC<ExchangeMessageSystemProps> = ({
 		messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
 	};
 
-	// Helper to get the ID of the other user in the conversation
 	const getOtherUserId = (): string => {
-		// Find a message with a recipient that isn't the current user
 		const otherUserMessage = exchangeMessages.find(
 			(m) => m.recipient_id !== user?.id
 		);
 		return otherUserMessage ? otherUserMessage.recipient_id : '';
 	};
 
-	// Check if the current user is the owner of the offer
 	const isOwner = user?.id === offer.user_id;
 
 	if (!user) {

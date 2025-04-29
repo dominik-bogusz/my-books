@@ -9,21 +9,17 @@ export enum BookListType {
 }
 
 interface UseBookActionsReturn {
-	// Favorites
 	favoriteBooks: Book[];
 	loadingFavorites: boolean;
 	isFavorite: (bookId: string) => boolean;
 	addToFavorites: (book: Book) => Promise<void>;
 	removeFromFavorites: (bookId: string) => Promise<void>;
 
-	// Reading List
 	readingList: Book[];
 	loadingReadingList: boolean;
 	isInReadingList: (bookId: string) => boolean;
 	addToReadingList: (book: Book) => Promise<void>;
 	removeFromReadingList: (bookId: string) => Promise<void>;
-
-	// Common actions
 	error: string | null;
 	refreshUserBooks: () => Promise<void>;
 }
@@ -36,7 +32,6 @@ export const useBookActions = (): UseBookActionsReturn => {
 	const [loadingReadingList, setLoadingReadingList] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	// Funkcja do pobierania książek użytkownika
 	const fetchUserBooks = useCallback(async () => {
 		if (!isAuthenticated || !user) {
 			setFavoriteBooks([]);
@@ -46,7 +41,6 @@ export const useBookActions = (): UseBookActionsReturn => {
 
 		setError(null);
 
-		// Load favorites
 		setLoadingFavorites(true);
 		try {
 			const { data: favoritesData, error: favError } = await supabase
@@ -55,7 +49,6 @@ export const useBookActions = (): UseBookActionsReturn => {
 				.eq('user_id', user.id);
 
 			if (favError) {
-				console.error('Error loading favorites:', favError);
 				throw favError;
 			}
 
@@ -64,8 +57,7 @@ export const useBookActions = (): UseBookActionsReturn => {
 					.map((item) => {
 						try {
 							return JSON.parse(item.book_data);
-						} catch (e) {
-							console.error('Error parsing book data:', e, item.book_data);
+						} catch {
 							return null;
 						}
 					})
@@ -75,14 +67,12 @@ export const useBookActions = (): UseBookActionsReturn => {
 			} else {
 				setFavoriteBooks([]);
 			}
-		} catch (err) {
-			console.error('Error loading favorites:', err);
+		} catch {
 			setError('Nie udało się załadować ulubionych książek');
 		} finally {
 			setLoadingFavorites(false);
 		}
 
-		// Load reading list
 		setLoadingReadingList(true);
 		try {
 			const { data: readingData, error: readError } = await supabase
@@ -91,7 +81,6 @@ export const useBookActions = (): UseBookActionsReturn => {
 				.eq('user_id', user.id);
 
 			if (readError) {
-				console.error('Error loading reading list:', readError);
 				throw readError;
 			}
 
@@ -100,8 +89,7 @@ export const useBookActions = (): UseBookActionsReturn => {
 					.map((item) => {
 						try {
 							return JSON.parse(item.book_data);
-						} catch (e) {
-							console.error('Error parsing book data:', e, item.book_data);
+						} catch  {
 							return null;
 						}
 					})
@@ -111,25 +99,21 @@ export const useBookActions = (): UseBookActionsReturn => {
 			} else {
 				setReadingList([]);
 			}
-		} catch (err) {
-			console.error('Error loading reading list:', err);
+		} catch {
 			setError('Nie udało się załadować listy do przeczytania');
 		} finally {
 			setLoadingReadingList(false);
 		}
 	}, [user, isAuthenticated]);
 
-	// Ekspozycja funkcji odświeżania książek
 	const refreshUserBooks = useCallback(async () => {
 		await fetchUserBooks();
 	}, [fetchUserBooks]);
 
-	// Load user's books when authenticated
 	useEffect(() => {
 		fetchUserBooks();
 	}, [fetchUserBooks]);
 
-	// Check if book is in favorites
 	const isFavorite = useCallback(
 		(bookId: string): boolean => {
 			return favoriteBooks.some((book) => book.id === bookId);
@@ -137,7 +121,6 @@ export const useBookActions = (): UseBookActionsReturn => {
 		[favoriteBooks]
 	);
 
-	// Check if book is in reading list
 	const isInReadingList = useCallback(
 		(bookId: string): boolean => {
 			return readingList.some((book) => book.id === bookId);
@@ -145,7 +128,6 @@ export const useBookActions = (): UseBookActionsReturn => {
 		[readingList]
 	);
 
-	// Add to favorites
 	const addToFavorites = useCallback(
 		async (book: Book): Promise<void> => {
 			if (!isAuthenticated || !user) {
@@ -155,9 +137,8 @@ export const useBookActions = (): UseBookActionsReturn => {
 
 			setError(null);
 			try {
-				// Sprawdzamy, czy książka już istnieje w ulubionych
 				if (isFavorite(book.id)) {
-					return; // Jeśli tak, to nie robimy nic
+					return;
 				}
 
 				const bookData = JSON.stringify(book);
@@ -168,20 +149,17 @@ export const useBookActions = (): UseBookActionsReturn => {
 				});
 
 				if (insertError) {
-					console.error('Error inserting favorite:', insertError);
 					throw insertError;
 				}
 
 				setFavoriteBooks((prev) => [...prev, book]);
-			} catch (err) {
-				console.error('Error adding to favorites:', err);
+			} catch {
 				setError('Nie udało się dodać książki do ulubionych');
 			}
 		},
 		[isAuthenticated, user, isFavorite]
 	);
 
-	// Remove from favorites
 	const removeFromFavorites = useCallback(
 		async (bookId: string): Promise<void> => {
 			if (!isAuthenticated || !user) {
@@ -198,20 +176,17 @@ export const useBookActions = (): UseBookActionsReturn => {
 					.eq('book_id', bookId);
 
 				if (deleteError) {
-					console.error('Error deleting favorite:', deleteError);
 					throw deleteError;
 				}
 
 				setFavoriteBooks((prev) => prev.filter((book) => book.id !== bookId));
-			} catch (err) {
-				console.error('Error removing from favorites:', err);
+			} catch {
 				setError('Nie udało się usunąć książki z ulubionych');
 			}
 		},
 		[isAuthenticated, user]
 	);
 
-	// Add to reading list
 	const addToReadingList = useCallback(
 		async (book: Book): Promise<void> => {
 			if (!isAuthenticated || !user) {
@@ -221,9 +196,8 @@ export const useBookActions = (): UseBookActionsReturn => {
 
 			setError(null);
 			try {
-				// Sprawdzamy, czy książka już istnieje na liście do przeczytania
 				if (isInReadingList(book.id)) {
-					return; // Jeśli tak, to nie robimy nic
+					return;
 				}
 
 				const bookData = JSON.stringify(book);
@@ -236,20 +210,17 @@ export const useBookActions = (): UseBookActionsReturn => {
 					});
 
 				if (insertError) {
-					console.error('Error inserting to reading list:', insertError);
 					throw insertError;
 				}
 
 				setReadingList((prev) => [...prev, book]);
-			} catch (err) {
-				console.error('Error adding to reading list:', err);
+			} catch {
 				setError('Nie udało się dodać książki do listy do przeczytania');
 			}
 		},
 		[isAuthenticated, user, isInReadingList]
 	);
 
-	// Remove from reading list
 	const removeFromReadingList = useCallback(
 		async (bookId: string): Promise<void> => {
 			if (!isAuthenticated || !user) {
@@ -268,13 +239,11 @@ export const useBookActions = (): UseBookActionsReturn => {
 					.eq('book_id', bookId);
 
 				if (deleteError) {
-					console.error('Error deleting from reading list:', deleteError);
 					throw deleteError;
 				}
 
 				setReadingList((prev) => prev.filter((book) => book.id !== bookId));
-			} catch (err) {
-				console.error('Error removing from reading list:', err);
+			} catch {
 				setError('Nie udało się usunąć książki z listy do przeczytania');
 			}
 		},

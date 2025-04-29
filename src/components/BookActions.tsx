@@ -19,7 +19,7 @@ const BookActions: React.FC<BookActionsProps> = ({ book, size = 'md' }) => {
 		removeFromFavorites,
 		addToReadingList,
 		removeFromReadingList,
-		refreshUserBooks, // Nowa funkcja, którą stworzyliśmy
+		refreshUserBooks,
 	} = useBookActions();
 	const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 	const [isProcessing, setIsProcessing] = useState(false);
@@ -46,13 +46,12 @@ const BookActions: React.FC<BookActionsProps> = ({ book, size = 'md' }) => {
 				await addToFavorites(book);
 			}
 
-			// Odświeżamy listę książek użytkownika, żeby pojawiła się w profilu
 			await refreshUserBooks();
 		} catch (error) {
 			console.error('Error managing favorites:', error);
 		} finally {
 			setIsProcessing(false);
-			setIsDropdownOpen(false); // Zamykamy dropdown po akcji
+			setIsDropdownOpen(false);
 		}
 	};
 
@@ -74,17 +73,15 @@ const BookActions: React.FC<BookActionsProps> = ({ book, size = 'md' }) => {
 				await addToReadingList(book);
 			}
 
-			// Odświeżamy listę książek użytkownika, żeby pojawiła się w profilu
 			await refreshUserBooks();
 		} catch (error) {
 			console.error('Error managing reading list:', error);
 		} finally {
 			setIsProcessing(false);
-			setIsDropdownOpen(false); // Zamykamy dropdown po akcji
+			setIsDropdownOpen(false);
 		}
 	};
 
-	// Determine size classes
 	const getIconSize = () => {
 		switch (size) {
 			case 'sm':

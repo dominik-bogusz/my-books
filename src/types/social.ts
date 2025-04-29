@@ -1,6 +1,3 @@
-// src/types/social.ts
-import { User } from '@supabase/supabase-js';
-
 export interface UserProfile {
 	id: string;
 	username: string;
@@ -18,7 +15,6 @@ export interface FollowRelation {
 	follower_id: string;
 	following_id: string;
 	created_at: string;
-	// Relacje
 	follower_details?: UserProfile;
 	following_details?: UserProfile;
 }
@@ -33,10 +29,9 @@ export interface ActivityItem {
 		| 'exchange_offer'
 		| 'follow';
 	book_id?: string;
-	book_data?: any;
-	related_id?: string; // ID powiązanych danych (np. ID recenzji)
+	book_data?: string;
+	related_id?: string;
 	created_at: string;
-	// Relacje
 	user_details?: UserProfile;
 }
 
@@ -50,10 +45,9 @@ export interface NotificationItem {
 		| 'comment'
 		| 'exchange_request'
 		| 'exchange_status';
-	related_id?: string; // ID powiązanych danych
+	related_id?: string;
 	message: string;
 	read: boolean;
 	created_at: string;
-	// Relacje
 	sender_details?: UserProfile;
 }

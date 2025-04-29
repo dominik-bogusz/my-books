@@ -28,7 +28,6 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({
   const [currentQuery, setCurrentQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
 
-  // Load saved search state from localStorage when component mounts
   useEffect(() => {
     const savedSearch = localStorage.getItem('savedSearch');
     if (savedSearch) {
@@ -38,14 +37,12 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({
         setTotalResults(totalResults);
         setCurrentQuery(currentQuery);
         setCurrentPage(currentPage);
-      } catch (e) {
-        console.error('Error parsing saved search:', e);
+      } catch {
         localStorage.removeItem('savedSearch');
       }
     }
   }, []);
 
-  // Save search state to localStorage when it changes
   useEffect(() => {
     if (books.length > 0) {
       const searchState = {
@@ -101,7 +98,6 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({
         publisher: item.volumeInfo.publisher,
       }));
 
-      // Sort books so those with thumbnails appear first
       const sortedBooks = formattedBooks.sort((a, b) => {
         if (a.imageLinks?.thumbnail && !b.imageLinks?.thumbnail) return -1;
         if (!a.imageLinks?.thumbnail && b.imageLinks?.thumbnail) return 1;
@@ -110,7 +106,6 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({
 
       setBooks(sortedBooks);
 
-      // Handle cases where the API returns fewer items than expected
       if (
         response.items.length < RESULTS_PER_PAGE &&
         startIndex + RESULTS_PER_PAGE >= response.totalItems
@@ -120,8 +115,7 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({
           setTotalResults(adjustedTotal);
         }
       }
-    } catch (err) {
-      console.error('Error searching books:', err);
+    } catch {
       setError(
         'Wystąpił błąd podczas wyszukiwania książek. Spróbuj ponownie.'
       );
@@ -157,7 +151,7 @@ export const SearchProvider: React.FC<{ children: React.ReactNode }> = ({
 export const useSearch = (): SearchContextType => {
   const context = useContext(SearchContext);
   if (context === undefined) {
-    throw new Error('useSearch must be used within a SearchProvider');
+    throw new Error();
   }
   return context;
 };

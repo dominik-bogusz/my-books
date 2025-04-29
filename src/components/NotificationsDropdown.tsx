@@ -15,7 +15,6 @@ const NotificationsDropdown: React.FC = () => {
 	const [isOpen, setIsOpen] = useState(false);
 	const dropdownRef = useRef<HTMLDivElement>(null);
 
-	// Zamykanie dropdowna po kliknięciu poza nim
 	useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
 			if (
@@ -32,31 +31,25 @@ const NotificationsDropdown: React.FC = () => {
 		};
 	}, []);
 
-	// Formatowanie daty
 	const formatDate = (dateString: string) => {
 		const date = new Date(dateString);
 		const now = new Date();
 		const diffMs = now.getTime() - date.getTime();
 
-		// Różnica w minutach
 		const diffMins = Math.floor(diffMs / (1000 * 60));
 
 		if (diffMins < 1) return 'przed chwilą';
 		if (diffMins < 60) return `${diffMins} min temu`;
 
-		// Różnica w godzinach
 		const diffHours = Math.floor(diffMins / 60);
 		if (diffHours < 24) return `${diffHours} godz. temu`;
 
-		// Różnica w dniach
 		const diffDays = Math.floor(diffHours / 24);
 		if (diffDays < 7) return `${diffDays} dni temu`;
 
-		// Formatuj datę dla starszych wpisów
 		return date.toLocaleDateString('pl-PL');
 	};
 
-	// Renderowanie ikony odpowiednio do typu powiadomienia
 	const renderNotificationIcon = (notificationType: string) => {
 		switch (notificationType) {
 			case 'follow':
@@ -74,14 +67,12 @@ const NotificationsDropdown: React.FC = () => {
 		}
 	};
 
-	// Funkcja do oznaczania powiadomienia jako przeczytane
 	const handleNotificationClick = async (notification: NotificationItem) => {
 		if (!notification.read) {
 			await markNotificationAsRead(notification.id);
 		}
 	};
 
-	// Funkcja do oznaczania wszystkich powiadomień jako przeczytane
 	const handleMarkAllAsRead = async () => {
 		await markAllNotificationsAsRead();
 	};

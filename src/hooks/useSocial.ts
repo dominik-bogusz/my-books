@@ -1,16 +1,13 @@
-// src/hooks/useSocial.ts
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import supabase from '../lib/supabase';
 import {
 	UserProfile,
-	FollowRelation,
 	ActivityItem,
 	NotificationItem,
 } from '../types/social';
 
 interface UseSocialReturn {
-	// Obserwujący i obserwowani
 	followers: UserProfile[];
 	following: UserProfile[];
 	isLoadingFollowers: boolean;
@@ -18,26 +15,22 @@ interface UseSocialReturn {
 	followersError: string | null;
 	followingError: string | null;
 
-	// Aktywność
 	userActivity: ActivityItem[];
 	followingActivity: ActivityItem[];
 	isLoadingActivity: boolean;
 	activityError: string | null;
 
-	// Powiadomienia
 	notifications: NotificationItem[];
 	unreadNotificationsCount: number;
 	isLoadingNotifications: boolean;
 	notificationsError: string | null;
 
-	// Operacje
 	followUser: (userId: string) => Promise<boolean>;
 	unfollowUser: (userId: string) => Promise<boolean>;
 	isFollowing: (userId: string) => boolean;
 	markNotificationAsRead: (notificationId: string) => Promise<boolean>;
 	markAllNotificationsAsRead: () => Promise<boolean>;
 
-	// Pobieranie danych
 	fetchUserProfile: (userId: string) => Promise<UserProfile | null>;
 	fetchUserFollowers: (userId: string) => Promise<void>;
 	fetchUserFollowing: (userId: string) => Promise<void>;
@@ -48,23 +41,18 @@ interface UseSocialReturn {
 export const useSocial = (): UseSocialReturn => {
 	const { user, isAuthenticated } = useAuth();
 
-	// Stan dla obserwujących i obserwowanych
 	const [followers, setFollowers] = useState<UserProfile[]>([]);
 	const [following, setFollowing] = useState<UserProfile[]>([]);
 	const [isLoadingFollowers, setIsLoadingFollowers] = useState(false);
 	const [isLoadingFollowing, setIsLoadingFollowing] = useState(false);
 	const [followersError, setFollowersError] = useState<string | null>(null);
 	const [followingError, setFollowingError] = useState<string | null>(null);
-
-	// Stan dla aktywności
 	const [userActivity, setUserActivity] = useState<ActivityItem[]>([]);
 	const [followingActivity, setFollowingActivity] = useState<ActivityItem[]>(
 		[]
 	);
 	const [isLoadingActivity, setIsLoadingActivity] = useState(false);
 	const [activityError, setActivityError] = useState<string | null>(null);
-
-	// Stan dla powiadomień
 	const [notifications, setNotifications] = useState<NotificationItem[]>([]);
 	const [unreadNotificationsCount, setUnreadNotificationsCount] = useState(0);
 	const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
@@ -72,7 +60,6 @@ export const useSocial = (): UseSocialReturn => {
 		null
 	);
 
-	// Pobieranie profilu użytkownika
 	const fetchUserProfile = useCallback(
 		async (userId: string): Promise<UserProfile | null> => {
 			try {
@@ -109,7 +96,6 @@ export const useSocial = (): UseSocialReturn => {
 		[]
 	);
 
-	// Pobieranie obserwujących użytkownika
 	const fetchUserFollowers = useCallback(async (userId: string) => {
 		if (!userId) return;
 
@@ -143,7 +129,6 @@ export const useSocial = (): UseSocialReturn => {
 		}
 	}, []);
 
-	// Pobieranie użytkowników obserwowanych przez danego użytkownika
 	const fetchUserFollowing = useCallback(async (userId: string) => {
 		if (!userId) return;
 
@@ -177,7 +162,6 @@ export const useSocial = (): UseSocialReturn => {
 		}
 	}, []);
 
-	// Sprawdzenie czy użytkownik jest obserwowany
 	const isFollowing = useCallback(
 		(userId: string): boolean => {
 			return following.some((profile) => profile.id === userId);
@@ -185,7 +169,6 @@ export const useSocial = (): UseSocialReturn => {
 		[following]
 	);
 
-	// Obserwowanie użytkownika
 	const followUser = useCallback(
 		async (userId: string): Promise<boolean> => {
 			if (!isAuthenticated || !user) {
@@ -201,12 +184,10 @@ export const useSocial = (): UseSocialReturn => {
 			}
 
 			if (isFollowing(userId)) {
-				// Użytkownik jest już obserwowany
 				return true;
 			}
 
 			try {
-				// Dodanie relacji obserwowania
 				const { error } = await supabase.from('follows').insert({
 					follower_id: user.id,
 					following_id: userId,
@@ -214,11 +195,9 @@ export const useSocial = (): UseSocialReturn => {
 
 				if (error) throw error;
 
-				// Aktualizacja liczników obserwujących/obserwowanych
 				await supabase.rpc('increment_followers_count', { user_id: userId });
 				await supabase.rpc('increment_following_count', { user_id: user.id });
 
-				// Dodanie powiadomienia dla obserwowanego użytkownika
 				await supabase.from('notifications').insert({
 					user_id: userId,
 					sender_id: user.id,
@@ -227,14 +206,12 @@ export const useSocial = (): UseSocialReturn => {
 					read: false,
 				});
 
-				// Dodanie aktywności
 				await supabase.from('activities').insert({
 					user_id: user.id,
 					activity_type: 'follow',
 					related_id: userId,
 				});
 
-				// Pobierz profil obserwowanego użytkownika i dodaj go do stanu
 				const userProfile = await fetchUserProfile(userId);
 				if (userProfile) {
 					setFollowing((prev) => [...prev, userProfile]);
@@ -250,7 +227,6 @@ export const useSocial = (): UseSocialReturn => {
 		[isAuthenticated, user, isFollowing, fetchUserProfile]
 	);
 
-	// Zaprzestanie obserwowania użytkownika
 	const unfollowUser = useCallback(
 		async (userId: string): Promise<boolean> => {
 			if (!isAuthenticated || !user) {
@@ -261,7 +237,6 @@ export const useSocial = (): UseSocialReturn => {
 			}
 
 			try {
-				// Usunięcie relacji obserwowania
 				const { error } = await supabase
 					.from('follows')
 					.delete()
@@ -269,11 +244,9 @@ export const useSocial = (): UseSocialReturn => {
 
 				if (error) throw error;
 
-				// Aktualizacja liczników obserwujących/obserwowanych
 				await supabase.rpc('decrement_followers_count', { user_id: userId });
 				await supabase.rpc('decrement_following_count', { user_id: user.id });
 
-				// Aktualizacja stanu
 				setFollowing((prev) => prev.filter((profile) => profile.id !== userId));
 
 				return true;
@@ -289,7 +262,6 @@ export const useSocial = (): UseSocialReturn => {
 		[isAuthenticated, user]
 	);
 
-	// Pobieranie aktywności użytkownika
 	const fetchUserActivity = useCallback(async (userId: string) => {
 		if (!userId) return;
 
@@ -322,7 +294,6 @@ export const useSocial = (): UseSocialReturn => {
 		}
 	}, []);
 
-	// Pobieranie aktywności obserwowanych użytkowników
 	const fetchFollowingActivity = useCallback(async () => {
 		if (!isAuthenticated || !user) return;
 
@@ -330,7 +301,6 @@ export const useSocial = (): UseSocialReturn => {
 		setActivityError(null);
 
 		try {
-			// Najpierw pobieramy ID obserwowanych użytkowników
 			const { data: followingData, error: followingError } = await supabase
 				.from('follows')
 				.select('following_id')
@@ -341,7 +311,6 @@ export const useSocial = (): UseSocialReturn => {
 			if (followingData && followingData.length > 0) {
 				const followingIds = followingData.map((f) => f.following_id);
 
-				// Pobieramy aktywność obserwowanych użytkowników
 				const { data, error } = await supabase
 					.from('activities')
 					.select(
@@ -360,7 +329,6 @@ export const useSocial = (): UseSocialReturn => {
 					setFollowingActivity(data as ActivityItem[]);
 				}
 			} else {
-				// Brak obserwowanych użytkowników
 				setFollowingActivity([]);
 			}
 		} catch (error) {
@@ -373,7 +341,6 @@ export const useSocial = (): UseSocialReturn => {
 		}
 	}, [isAuthenticated, user]);
 
-	// Pobieranie powiadomień
 	const fetchNotifications = useCallback(async () => {
 		if (!isAuthenticated || !user) return;
 
@@ -397,7 +364,6 @@ export const useSocial = (): UseSocialReturn => {
 			if (data) {
 				setNotifications(data as NotificationItem[]);
 
-				// Liczba nieprzeczytanych powiadomień
 				setUnreadNotificationsCount(data.filter((n) => !n.read).length);
 			}
 		} catch (error) {
@@ -408,7 +374,6 @@ export const useSocial = (): UseSocialReturn => {
 		}
 	}, [isAuthenticated, user]);
 
-	// Oznaczanie powiadomienia jako przeczytane
 	const markNotificationAsRead = useCallback(
 		async (notificationId: string): Promise<boolean> => {
 			if (!isAuthenticated || !user) {
@@ -427,12 +392,10 @@ export const useSocial = (): UseSocialReturn => {
 
 				if (error) throw error;
 
-				// Aktualizacja stanu
 				setNotifications((prev) =>
 					prev.map((n) => (n.id === notificationId ? { ...n, read: true } : n))
 				);
 
-				// Aktualizacja licznika nieprzeczytanych
 				setUnreadNotificationsCount((prev) => Math.max(0, prev - 1));
 
 				return true;
@@ -447,7 +410,6 @@ export const useSocial = (): UseSocialReturn => {
 		[isAuthenticated, user]
 	);
 
-	// Oznaczanie wszystkich powiadomień jako przeczytane
 	const markAllNotificationsAsRead = useCallback(async (): Promise<boolean> => {
 		if (!isAuthenticated || !user) {
 			setNotificationsError(
@@ -465,7 +427,6 @@ export const useSocial = (): UseSocialReturn => {
 
 			if (error) throw error;
 
-			// Aktualizacja stanu
 			setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
 			setUnreadNotificationsCount(0);
 
@@ -479,7 +440,6 @@ export const useSocial = (): UseSocialReturn => {
 		}
 	}, [isAuthenticated, user]);
 
-	// Efekty dla ładowania początkowego
 	useEffect(() => {
 		if (isAuthenticated && user) {
 			fetchUserFollowers(user.id);
@@ -495,34 +455,25 @@ export const useSocial = (): UseSocialReturn => {
 	]);
 
 	return {
-		// Obserwujący i obserwowani
 		followers,
 		following,
 		isLoadingFollowers,
 		isLoadingFollowing,
 		followersError,
 		followingError,
-
-		// Aktywność
 		userActivity,
 		followingActivity,
 		isLoadingActivity,
 		activityError,
-
-		// Powiadomienia
 		notifications,
 		unreadNotificationsCount,
 		isLoadingNotifications,
 		notificationsError,
-
-		// Operacje
 		followUser,
 		unfollowUser,
 		isFollowing,
 		markNotificationAsRead,
 		markAllNotificationsAsRead,
-
-		// Pobieranie danych
 		fetchUserProfile,
 		fetchUserFollowers,
 		fetchUserFollowing,

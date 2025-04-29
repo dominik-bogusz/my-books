@@ -19,19 +19,8 @@ const BookDetail = () => {
 	const [error, setError] = useState<string | null>(null);
 	const [isProcessing, setIsProcessing] = useState(false);
 	const { isAuthenticated } = useAuth();
-	const {
-		isFavorite,
-		isInReadingList,
-		addToFavorites,
-		removeFromFavorites,
-		addToReadingList,
-		removeFromReadingList,
-		refreshUserBooks,
-	} = useBookActions();
 	const navigate = useNavigate();
 	const { currentQuery } = useSearch();
-
-	// Exchange system states
 	const [showExchangeForm, setShowExchangeForm] = useState(false);
 	const [selectedOffer, setSelectedOffer] = useState<ExchangeOffer | null>(
 		null
@@ -41,21 +30,23 @@ const BookDetail = () => {
 	>('details');
 
 	const {
-		bookOffers,
-		isLoadingOffers,
-		offersError,
-		createOffer,
-		fetchOffersByBook,
-		fetchOfferDetails,
-	} = useExchange(id);
+		isFavorite,
+		isInReadingList,
+		addToFavorites,
+		removeFromFavorites,
+		addToReadingList,
+		removeFromReadingList,
+		refreshUserBooks,
+	} = useBookActions();
+
+	const { bookOffers, isLoadingOffers, offersError, fetchOffersByBook } =
+		useExchange(id);
 
 	useEffect(() => {
 		const fetchBookDetails = async () => {
 			if (!id) return;
-
 			setIsLoading(true);
 			setError(null);
-
 			try {
 				const data = await getBookById(id);
 
@@ -76,8 +67,7 @@ const BookDetail = () => {
 
 					setBook(bookData);
 				}
-			} catch (err) {
-				console.error('Error fetching book details:', err);
+			} catch {
 				setError(
 					'Nie udało się załadować szczegółów książki. Spróbuj ponownie później.'
 				);
@@ -91,7 +81,6 @@ const BookDetail = () => {
 
 	const handleToggleFavorite = async () => {
 		if (!book) return;
-
 		if (!isAuthenticated) {
 			navigate('/login', { state: { from: { pathname: `/book/${id}` } } });
 			return;
@@ -99,16 +88,12 @@ const BookDetail = () => {
 
 		try {
 			setIsProcessing(true);
-
 			if (isFavorite(book.id)) {
 				await removeFromFavorites(book.id);
 			} else {
 				await addToFavorites(book);
 			}
-
 			await refreshUserBooks();
-		} catch (error) {
-			console.error('Error toggling favorite:', error);
 		} finally {
 			setIsProcessing(false);
 		}
@@ -116,7 +101,6 @@ const BookDetail = () => {
 
 	const handleToggleReadingList = async () => {
 		if (!book) return;
-
 		if (!isAuthenticated) {
 			navigate('/login', { state: { from: { pathname: `/book/${id}` } } });
 			return;
@@ -124,16 +108,12 @@ const BookDetail = () => {
 
 		try {
 			setIsProcessing(true);
-
 			if (isInReadingList(book.id)) {
 				await removeFromReadingList(book.id);
 			} else {
 				await addToReadingList(book);
 			}
-
 			await refreshUserBooks();
-		} catch (error) {
-			console.error('Error toggling reading list:', error);
 		} finally {
 			setIsProcessing(false);
 		}
@@ -149,13 +129,10 @@ const BookDetail = () => {
 		setActiveTab('exchange');
 	};
 
-	// Determine where to go back to
 	const getBackLink = () => {
-		// If we have a current search query, link back to search results
 		if (currentQuery) {
 			return '/search';
 		}
-		// Otherwise, default to home page
 		return '/';
 	};
 
@@ -234,7 +211,6 @@ const BookDetail = () => {
 				</Link>
 			</div>
 
-			{/* Navigation tabs */}
 			<ul className='nav nav-tabs mb-4'>
 				<li className='nav-item'>
 					<button

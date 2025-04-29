@@ -1,4 +1,3 @@
-// src/hooks/useExchange.ts
 import { useState, useEffect, useCallback } from 'react';
 import {
 	ExchangeOffer,
@@ -13,7 +12,6 @@ import { useAuth } from '../context/AuthContext';
 import supabase from '../lib/supabase';
 
 interface UseExchangeReturn {
-	// Oferty wymiany
 	exchangeOffers: ExchangeOffer[];
 	userOffers: ExchangeOffer[];
 	bookOffers: ExchangeOffer[];
@@ -21,19 +19,16 @@ interface UseExchangeReturn {
 	isLoadingOffers: boolean;
 	offersError: string | null;
 
-	// Wiadomości
 	exchangeMessages: ExchangeMessage[];
 	unreadMessagesCount: number;
 	isLoadingMessages: boolean;
 	messagesError: string | null;
 
-	// Transakcje
 	userTransactions: ExchangeTransaction[];
 	activeTransactions: ExchangeTransaction[];
 	isLoadingTransactions: boolean;
 	transactionsError: string | null;
 
-	// Akcje dla ofert
 	createOffer: (
 		book: Book,
 		condition: BookCondition,
@@ -48,7 +43,6 @@ interface UseExchangeReturn {
 	deleteOffer: (offerId: string) => Promise<boolean>;
 	setOfferActive: (offerId: string, active: boolean) => Promise<boolean>;
 
-	// Akcje dla wiadomości
 	sendMessage: (
 		offerId: string,
 		recipientId: string,
@@ -56,28 +50,23 @@ interface UseExchangeReturn {
 	) => Promise<boolean>;
 	markMessageAsRead: (messageId: string) => Promise<boolean>;
 
-	// Akcje dla transakcji
 	requestExchange: (offerId: string, ownerId: string) => Promise<boolean>;
 	updateTransactionStatus: (
 		transactionId: string,
 		status: TransactionStatus
 	) => Promise<boolean>;
 
-	// Funkcje pobierające dane
 	fetchOffersByBook: (bookId: string) => Promise<void>;
 	fetchUserOffers: () => Promise<void>;
 	fetchOfferDetails: (offerId: string) => Promise<ExchangeOffer | null>;
 	fetchOfferMessages: (offerId: string) => Promise<void>;
 	fetchUserTransactions: () => Promise<void>;
-
-	// Czyszczenie
 	clearSelectedOffer: () => void;
 }
 
 export const useExchange = (bookId?: string): UseExchangeReturn => {
 	const { user, isAuthenticated } = useAuth();
 
-	// Stan dla ofert wymiany
 	const [exchangeOffers, setExchangeOffers] = useState<ExchangeOffer[]>([]);
 	const [userOffers, setUserOffers] = useState<ExchangeOffer[]>([]);
 	const [bookOffers, setBookOffers] = useState<ExchangeOffer[]>([]);
@@ -87,7 +76,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 	const [isLoadingOffers, setIsLoadingOffers] = useState(false);
 	const [offersError, setOffersError] = useState<string | null>(null);
 
-	// Stan dla wiadomości
 	const [exchangeMessages, setExchangeMessages] = useState<ExchangeMessage[]>(
 		[]
 	);
@@ -95,7 +83,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 	const [isLoadingMessages, setIsLoadingMessages] = useState(false);
 	const [messagesError, setMessagesError] = useState<string | null>(null);
 
-	// Stan dla transakcji
 	const [userTransactions, setUserTransactions] = useState<
 		ExchangeTransaction[]
 	>([]);
@@ -107,7 +94,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 		null
 	);
 
-	// Pobieranie ofert dla konkretnej książki
 	const fetchOffersByBook = useCallback(async (bookId: string) => {
 		if (!bookId) return;
 
@@ -151,7 +137,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 		}
 	}, []);
 
-	// Pobieranie ofert użytkownika
 	const fetchUserOffers = useCallback(async () => {
 		if (!isAuthenticated || !user) {
 			setUserOffers([]);
@@ -196,7 +181,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 		}
 	}, [isAuthenticated, user]);
 
-	// Pobieranie szczegółów oferty
 	const fetchOfferDetails = useCallback(
 		async (offerId: string): Promise<ExchangeOffer | null> => {
 			if (!offerId) return null;
@@ -245,7 +229,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 		[]
 	);
 
-	// Tworzenie nowej oferty wymiany
 	const createOffer = async (
 		book: Book,
 		condition: BookCondition,
@@ -293,7 +276,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 							: data.book_data,
 				} as ExchangeOffer;
 
-				// Aktualizujemy stan
 				setUserOffers((prev) => [newOffer, ...prev]);
 
 				if (book.id === bookId) {
@@ -316,7 +298,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 		}
 	};
 
-	// Aktualizacja oferty
 	const updateOffer = async (
 		offerId: string,
 		updates: Partial<ExchangeOffer>
@@ -336,7 +317,52 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 		setIsLoadingOffers(true);
 		setOffersError(null);
 
-		
+		try {
+			const { data, error } = await supabase
+				.from('exchange_offers')
+				.update(updates)
+				.eq('id', offerId)
+				.eq('user_id', user.id)
+				.select()
+				.single();
+
+			if (error) throw error;
+
+			if (data) {
+				const updatedOffer = {
+					...data,
+					book_data:
+						typeof data.book_data === 'string'
+							? JSON.parse(data.book_data)
+							: data.book_data,
+				} as ExchangeOffer;
+
+				setUserOffers((prev) =>
+					prev.map((offer) => (offer.id === offerId ? updatedOffer : offer))
+				);
+				if (bookId && updatedOffer.book_id === bookId) {
+					setBookOffers((prev) =>
+						prev.map((offer) => (offer.id === offerId ? updatedOffer : offer))
+					);
+					setExchangeOffers((prev) =>
+						prev.map((offer) => (offer.id === offerId ? updatedOffer : offer))
+					);
+				}
+
+				return true;
+			}
+
+			return false;
+		} catch (error) {
+			console.error('Błąd podczas aktualizacji oferty wymiany:', error);
+			setOffersError(
+				'Nie udało się zaktualizować oferty wymiany. Spróbuj ponownie później.'
+			);
+			return false;
+		} finally {
+			setIsLoadingOffers(false);
+		}
+	};
 
 	const deleteOffer = async (offerId: string): Promise<boolean> => {
 		if (!isAuthenticated || !user) {
@@ -522,12 +548,11 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 		}
 	};
 
-	// Pobieranie liczby nieprzeczytanych wiadomości
 	const fetchUnreadMessagesCount = useCallback(async () => {
 		if (!isAuthenticated || !user) return;
 
 		try {
-			const { data, error, count } = await supabase
+			const { error, count } = await supabase
 				.from('exchange_messages')
 				.select('id', { count: 'exact', head: true })
 				.eq('recipient_id', user.id)
@@ -546,7 +571,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 		}
 	}, [isAuthenticated, user]);
 
-	// Pobieranie transakcji użytkownika
 	const fetchUserTransactions = useCallback(async () => {
 		if (!isAuthenticated || !user) return;
 
@@ -570,7 +594,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 			if (error) throw error;
 
 			if (data) {
-				// Przetwarzamy dane, aby mieć prawidłowy format book_data w offer_details
 				const transactions = data.map((transaction) => {
 					if (
 						transaction.offer_details &&
@@ -592,7 +615,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 
 				setUserTransactions(transactions);
 
-				// Filtrujemy aktywne transakcje (oczekujące lub zaakceptowane)
 				const active = transactions.filter(
 					(t) => t.status === 'oczekująca' || t.status === 'zaakceptowana'
 				);
@@ -608,7 +630,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 		}
 	}, [isAuthenticated, user]);
 
-	// Żądanie wymiany książki
 	const requestExchange = async (
 		offerId: string,
 		ownerId: string
@@ -627,7 +648,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 			return false;
 		}
 
-		// Sprawdzenie, czy użytkownik nie próbuje wymienić książki z samym sobą
 		if (user.id === ownerId) {
 			setTransactionsError('Nie możesz wymienić książki sam ze sobą.');
 			return false;
@@ -637,7 +657,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 		setTransactionsError(null);
 
 		try {
-			// Najpierw sprawdzamy, czy istnieje już transakcja dla tej oferty od tego użytkownika
 			const { data: existingTransaction, error: checkError } = await supabase
 				.from('exchange_transactions')
 				.select('*')
@@ -648,7 +667,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 
 			if (checkError) throw checkError;
 
-			// Jeśli istnieje aktywna transakcja, zwracamy błąd
 			if (existingTransaction) {
 				setTransactionsError(
 					'Już złożyłeś prośbę o wymianę tej książki. Poczekaj na odpowiedź właściciela.'
@@ -656,7 +674,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 				return false;
 			}
 
-			// Pobieramy szczegóły oferty
 			const { data: offerData, error: offerError } = await supabase
 				.from('exchange_offers')
 				.select('exchange_type')
@@ -670,7 +687,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 				return false;
 			}
 
-			// Tworzymy nową transakcję
 			const { data, error } = await supabase
 				.from('exchange_transactions')
 				.insert({
@@ -693,7 +709,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 			if (error) throw error;
 
 			if (data) {
-				// Przetwarzamy dane, aby mieć prawidłowy format book_data w offer_details
 				const newTransaction = {
 					...data,
 					offer_details: data.offer_details && {
@@ -705,7 +720,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 					},
 				} as ExchangeTransaction;
 
-				// Aktualizujemy stan
 				setUserTransactions((prev) => [newTransaction, ...prev]);
 				setActiveTransactions((prev) => [newTransaction, ...prev]);
 
@@ -724,7 +738,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 		}
 	};
 
-	// Aktualizacja statusu transakcji
 	const updateTransactionStatus = async (
 		transactionId: string,
 		status: TransactionStatus
@@ -750,7 +763,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 				updated_at: new Date().toISOString(),
 			};
 
-			// Jeśli status to "zakończona", dodajemy datę zakończenia
 			if (status === 'zakończona') {
 				updateData.completed_at = new Date().toISOString();
 			}
@@ -759,7 +771,7 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 				.from('exchange_transactions')
 				.update(updateData)
 				.eq('id', transactionId)
-				.or(`requester_id.eq.${user.id},owner_id.eq.${user.id}`) // Tylko właściciel lub proszący może aktualizować
+				.or(`requester_id.eq.${user.id},owner_id.eq.${user.id}`)
 				.select(
 					`
           *,
@@ -773,7 +785,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 			if (error) throw error;
 
 			if (data) {
-				// Przetwarzamy dane, aby mieć prawidłowy format book_data w offer_details
 				const updatedTransaction = {
 					...data,
 					offer_details: data.offer_details && {
@@ -785,12 +796,10 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 					},
 				} as ExchangeTransaction;
 
-				// Aktualizujemy stan
 				setUserTransactions((prev) =>
 					prev.map((tr) => (tr.id === transactionId ? updatedTransaction : tr))
 				);
 
-				// Jeśli transakcja jest zakończona, odrzucona lub anulowana, usuwamy ją z aktywnych
 				if (
 					status === 'zakończona' ||
 					status === 'odrzucona' ||
@@ -807,7 +816,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 					);
 				}
 
-				// Jeśli transakcja jest zakończona, dezaktywujemy ofertę
 				if (status === 'zakończona' && updatedTransaction.offer_details) {
 					await setOfferActive(updatedTransaction.offer_details.id, false);
 				}
@@ -827,7 +835,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 		}
 	};
 
-	// Efekty dla ładowania początkowego
 	useEffect(() => {
 		if (bookId) {
 			fetchOffersByBook(bookId);
@@ -849,7 +856,6 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 	]);
 
 	return {
-		// Oferty wymiany
 		exchangeOffers,
 		userOffers,
 		bookOffers,
@@ -857,40 +863,33 @@ export const useExchange = (bookId?: string): UseExchangeReturn => {
 		isLoadingOffers,
 		offersError,
 
-		// Wiadomości
 		exchangeMessages,
 		unreadMessagesCount,
 		isLoadingMessages,
 		messagesError,
 
-		// Transakcje
 		userTransactions,
 		activeTransactions,
 		isLoadingTransactions,
 		transactionsError,
 
-		// Akcje dla ofert
 		createOffer,
 		updateOffer,
 		deleteOffer,
 		setOfferActive,
 
-		// Akcje dla wiadomości
 		sendMessage,
 		markMessageAsRead,
 
-		// Akcje dla transakcji
 		requestExchange,
 		updateTransactionStatus,
 
-		// Funkcje
 		fetchOffersByBook,
 		fetchUserOffers,
 		fetchOfferDetails,
 		fetchOfferMessages,
 		fetchUserTransactions,
 
-		// Czyszczenie
 		clearSelectedOffer,
 	};
 };

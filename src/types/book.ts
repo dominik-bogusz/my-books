@@ -1,4 +1,3 @@
-// src/types/book.ts
 export interface Book {
 	id: string;
 	title: string;
@@ -38,7 +37,6 @@ export interface GoogleBookResponse {
 	totalItems: number;
 }
 
-// Nowe typy dla recenzji
 export interface BookReview {
 	id: string;
 	user_id: string;
@@ -48,14 +46,12 @@ export interface BookReview {
 	book_data: Book;
 	created_at: string;
 	updated_at: string;
-	// Dodatkowe pola z relacji
 	user_details?: {
 		username: string;
 		avatar_url: string | null;
 	};
 }
 
-// Typ stanowiący agregację recenzji dla książki
 export interface BookRatingSummary {
 	averageRating: number;
 	totalReviews: number;
@@ -68,7 +64,6 @@ export interface BookRatingSummary {
 	};
 }
 
-// Typy dla systemu wymiany książek
 export type BookCondition =
 	| 'nowa'
 	| 'bardzo dobry'
@@ -95,7 +90,6 @@ export interface ExchangeOffer {
 	active: boolean;
 	created_at: string;
 	updated_at: string;
-	// Dodatkowe pola z relacji
 	user_details?: {
 		username: string;
 		avatar_url: string | null;
@@ -110,7 +104,6 @@ export interface ExchangeMessage {
 	message: string;
 	read: boolean;
 	created_at: string;
-	// Dodatkowe pola z relacji
 	sender_details?: {
 		username: string;
 		avatar_url: string | null;
@@ -127,7 +120,6 @@ export interface ExchangeTransaction {
 	created_at: string;
 	updated_at: string;
 	completed_at: string | null;
-	// Dodatkowe pola z relacji
 	offer_details?: ExchangeOffer;
 	requester_details?: {
 		username: string;

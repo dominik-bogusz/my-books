@@ -12,10 +12,6 @@ interface UseStorageReturn {
 const useStorage = (): UseStorageReturn => {
 	const { user } = useAuth();
 	const [isUploading, setIsUploading] = useState(false);
-
-	/**
-	 * Uploads an avatar image to Supabase Storage
-	 */
 	const uploadAvatar = async (
 		file: File
 	): Promise<{ url: string | null; error: string | null }> => {
@@ -26,7 +22,6 @@ const useStorage = (): UseStorageReturn => {
 		try {
 			setIsUploading(true);
 
-			// Sprawdzamy, czy to plik obrazu
 			if (!file.type.startsWith('image/')) {
 				return {
 					url: null,
@@ -34,7 +29,6 @@ const useStorage = (): UseStorageReturn => {
 				};
 			}
 
-			// Sprawdzamy rozmiar pliku (max 2MB)
 			if (file.size > 2 * 1024 * 1024) {
 				return {
 					url: null,
@@ -42,15 +36,11 @@ const useStorage = (): UseStorageReturn => {
 				};
 			}
 
-			// Generujemy unikalną nazwę pliku
 			const fileExt = file.name.split('.').pop();
 			const fileName = `${user.id}-${Math.random()
 				.toString(36)
 				.substring(2)}.${fileExt}`;
 			const filePath = `avatars/${fileName}`;
-
-			// Uploadujemy plik do Supabase Storage
-			// Zakładamy, że bucket 'avatars' już istnieje
 			const { error: uploadError } = await supabase.storage
 				.from('avatars')
 				.upload(filePath, file, {
@@ -66,7 +56,6 @@ const useStorage = (): UseStorageReturn => {
 				};
 			}
 
-			// Pobieramy publiczny URL pliku
 			const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
 
 			if (!data.publicUrl) {

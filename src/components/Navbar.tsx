@@ -1,4 +1,3 @@
-// src/components/Navbar.tsx
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -14,7 +13,6 @@ const Navbar = () => {
 	const handleSearch = (e: React.FormEvent) => {
 		e.preventDefault();
 		if (searchQuery.trim()) {
-			// Clear previous search results when performing a new search
 			clearSearch();
 			navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
 		}
@@ -26,7 +24,6 @@ const Navbar = () => {
 	};
 
 	const handleHomeClick = () => {
-		// Clear search when navigating to home
 		clearSearch();
 	};
 
@@ -87,7 +84,6 @@ const Navbar = () => {
 					</form>
 
 					<div className='ms-auto d-flex align-items-center'>
-						{/* Link do społeczności - kieruje do istniejącego widoku użytkownika */}
 						<Link
 							to={isAuthenticated && user ? `/user/${user.id}` : '/login'}
 							className='btn btn-outline-primary me-3'
@@ -98,7 +94,6 @@ const Navbar = () => {
 
 						{isAuthenticated ? (
 							<div className='d-flex align-items-center'>
-								{/* Powiadomienia */}
 								<div className='me-3'>
 									<NotificationsDropdown />
 								</div>

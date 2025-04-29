@@ -2,7 +2,6 @@ body {
 	background-color: #f8f9fa;
 }
 
-/* Dodatkowe style dla przycisku szukaj */
 .btn-danger {
 	background-color: #e74c3c;
 }
@@ -11,7 +10,6 @@ body {
 	background-color: #c0392b;
 }
 
-/* Style dla głównego kontenera */
 .content-wrapper {
 	min-height: calc(100vh - 56px);
 	padding: 20px 0;

@@ -3,7 +3,6 @@ import PopularBooks from '../components/PopularBooks';
 const Home = () => {
 	return (
 		<>
-			{/* Hero Section */}
 			<div
 				className=' text-white text-center py-5'
 				style={{
@@ -21,7 +20,6 @@ const Home = () => {
 				</div>
 			</div>
 
-			{/* Features Section */}
 			<div className='py-5'>
 				<div className='container'>
 					<h2 className='text-center mb-3'>Odkrywaj, śledź i poznawaj</h2>

@@ -41,13 +41,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 	const [isLoading, setIsLoading] = useState(true);
 
 	useEffect(() => {
-		// Check active sessions and sets the user
 		supabase.auth.getSession().then(({ data: { session } }) => {
 			setUser(session?.user ?? null);
 			setIsLoading(false);
 		});
 
-		// Listen for auth changes
 		const {
 			data: { subscription },
 		} = supabase.auth.onAuthStateChange((_event, session) => {
@@ -72,13 +70,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 				return { success: false, error: error.message };
 			}
 
-			// Sprawdź, czy konto jest oznaczone jako usunięte
 			if (
 				data.user &&
 				data.user.user_metadata &&
 				data.user.user_metadata.account_status === 'deleted'
 			) {
-				// Jeśli konto jest oznaczone jako usunięte, wyloguj użytkownika i zwróć błąd
 				await supabase.auth.signOut();
 				return {
 					success: false,
@@ -92,7 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 			return {
 				success: false,
 				error:
-					error instanceof Error ? error.message : 'An unknown error occurred',
+					error instanceof Error ? error.message : 'Wystąpił nieznany błąd',
 			};
 		} finally {
 			setIsLoading(false);
@@ -107,7 +103,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 		try {
 			setIsLoading(true);
 
-			// Bezpośrednia rejestracja bez sprawdzania czy konto istnieje
 			const { error: signUpError, data } = await supabase.auth.signUp({
 				email,
 				password,
@@ -122,9 +117,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 				return { success: false, error: signUpError.message };
 			}
 
-			// Jeśli rejestracja powiodła się, próbuj utworzyć profil użytkownika
 			if (data.user) {
-				// Można to pominąć, jeśli nadal występuje błąd RLS
 				const { error: profileError } = await supabase.from('profiles').insert({
 					id: data.user.id,
 					username: username || email.split('@')[0],
@@ -132,8 +125,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 				});
 
 				if (profileError) {
-					console.error('Error creating profile:', profileError);
-					// Kontynuujemy mimo to, profil można utworzyć później
+					console.error('Błąd przy tworzeniu konta:', profileError);
 				}
 			}
 
@@ -142,7 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 			return {
 				success: false,
 				error:
-					error instanceof Error ? error.message : 'An unknown error occurred',
+					error instanceof Error ? error.message : 'Wystąpił nieznany błąd',
 			};
 		} finally {
 			setIsLoading(false);
@@ -164,10 +156,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 	}) => {
 		try {
 			if (!user) {
-				return { success: false, error: 'Not authenticated' };
+				return { success: false, error: 'Nie zautoryzowano' };
 			}
 
-			// Update auth metadata
 			const { error: updateError } = await supabase.auth.updateUser({
 				data,
 			});
@@ -176,7 +167,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 				return { success: false, error: updateError.message };
 			}
 
-			// Create or update profiles table entry
 			const { error: upsertError } = await supabase.from('profiles').upsert(
 				{
 					id: user.id,
@@ -192,17 +182,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 			);
 
 			if (upsertError) {
-				console.error('Error updating profile in database:', upsertError);
 				return { success: false, error: upsertError.message };
 			}
 
 			return { success: true };
 		} catch (error) {
-			console.error('Unexpected error in updateProfile:', error);
 			return {
 				success: false,
 				error:
-					error instanceof Error ? error.message : 'An unknown error occurred',
+					error instanceof Error ? error.message : 'Wystąpił nieznany błąd',
 			};
 		}
 	};
@@ -210,70 +198,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 	const deleteAccount = async () => {
 		try {
 			if (!user) {
-				return { success: false, error: 'Not authenticated' };
+				return { success: false, error: 'Nie zautoryzowano' };
 			}
 
 			setIsLoading(true);
 
-			// Delete user data from various tables
-			// 1. Delete favorites
 			const { error: favoritesError } = await supabase
 				.from('favorites')
 				.delete()
 				.eq('user_id', user.id);
 
 			if (favoritesError) {
-				console.error('Error deleting favorites:', favoritesError);
-				// Continue with deletion even if this fails
+				console.error(favoritesError);
 			}
 
-			// 2. Delete reading list
 			const { error: readingListError } = await supabase
 				.from('reading_list')
 				.delete()
 				.eq('user_id', user.id);
 
 			if (readingListError) {
-				console.error('Error deleting reading list:', readingListError);
-				// Continue with deletion even if this fails
+				console.error(readingListError);
 			}
 
-			// 3. Delete profile
 			const { error: profileError } = await supabase
 				.from('profiles')
 				.delete()
 				.eq('id', user.id);
 
 			if (profileError) {
-				console.error('Error deleting profile:', profileError);
-				// Continue with deletion even if this fails
+				console.error();
 			}
 
-			// 4. Delete user avatar from storage if exists
 			try {
-				// First check if avatar exists in metadata
 				if (user.user_metadata?.avatar_url) {
-					// Extract file path from URL
 					const avatarUrl = user.user_metadata.avatar_url as string;
 					const urlParts = avatarUrl.split('/');
 					const fileName = urlParts[urlParts.length - 1];
 					const filePath = `avatars/${fileName}`;
 
-					// Delete the file
 					const { error: storageError } = await supabase.storage
 						.from('avatars')
 						.remove([filePath]);
 
 					if (storageError) {
-						console.error('Error deleting avatar:', storageError);
+						console.error();
 					}
 				}
-			} catch (storageError) {
-				console.error('Error handling avatar deletion:', storageError);
-				// Continue with user deletion even if avatar deletion fails
+			} catch {
+				console.error();
 			}
 
-			// 5. Set the account_status to 'deleted' in user metadata
 			const { error: updateError } = await supabase.auth.updateUser({
 				data: {
 					account_status: 'deleted',
@@ -288,7 +263,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 				};
 			}
 
-			// 6. Change password to a random string to prevent login
 			const randomPassword =
 				Math.random().toString(36).slice(2) +
 				Math.random().toString(36).slice(2) +
@@ -300,18 +274,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
 			if (passwordUpdateError) {
 				console.error(
-					'Error updating password during account deletion:',
 					passwordUpdateError
 				);
-				// Still consider deletion successful even if password change fails
 			}
 
-			// Log out the user
 			await supabase.auth.signOut();
 
 			return { success: true };
 		} catch (error) {
-			console.error('Error in deleteAccount:', error);
 			return {
 				success: false,
 				error:
@@ -341,7 +311,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 export const useAuth = (): AuthContextType => {
 	const context = useContext(AuthContext);
 	if (context === undefined) {
-		throw new Error('useAuth must be used within an AuthProvider');
+		throw new Error;
 	}
 	return context;
 };

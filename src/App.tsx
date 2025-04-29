@@ -35,7 +35,6 @@ function App() {
 									</ProtectedRoute>
 								}
 							/>
-							{/* Dodaj nowe trasy */}
 							<Route path='/user/:id' element={<UserProfile />} />
 							<Route
 								path='/reading-stats'

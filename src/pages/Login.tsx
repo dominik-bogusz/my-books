@@ -11,7 +11,6 @@ const Login: React.FC = () => {
 	const navigate = useNavigate();
 	const location = useLocation();
 
-	// Get redirect path from location state or default to home
 	const from = location.state?.from?.pathname || '/';
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -34,7 +33,7 @@ const Login: React.FC = () => {
 			}
 		} catch (err) {
 			setError('Wystąpił nieoczekiwany błąd. Spróbuj ponownie później.');
-			console.error('Login error:', err);
+			console.error('Błąd logowania:', err);
 		} finally {
 			setIsSubmitting(false);
 		}

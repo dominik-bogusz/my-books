@@ -22,42 +22,33 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId, limit = 10 }) => {
 		if (userId) {
 			fetchUserActivity(userId);
 		} else {
-			// W przeciwnym razie pobieramy aktywność obserwowanych
 			fetchFollowingActivity();
 		}
 	}, [userId, fetchUserActivity, fetchFollowingActivity]);
 
-	// Wybieramy odpowiednie dane do wyświetlenia
 	const activitiesToShow = userId ? userActivity : followingActivity;
 
-	// Ograniczamy liczbę wyświetlanych elementów
 	const limitedActivities = activitiesToShow.slice(0, limit);
 
-	// Formatowanie daty
 	const formatDate = (dateString: string) => {
 		const date = new Date(dateString);
 		const now = new Date();
 		const diffMs = now.getTime() - date.getTime();
 
-		// Różnica w minutach
 		const diffMins = Math.floor(diffMs / (1000 * 60));
 
 		if (diffMins < 1) return 'przed chwilą';
 		if (diffMins < 60) return `${diffMins} min temu`;
 
-		// Różnica w godzinach
 		const diffHours = Math.floor(diffMins / 60);
 		if (diffHours < 24) return `${diffHours} godz. temu`;
 
-		// Różnica w dniach
 		const diffDays = Math.floor(diffHours / 24);
 		if (diffDays < 7) return `${diffDays} dni temu`;
 
-		// Formatuj datę dla starszych wpisów
 		return date.toLocaleDateString('pl-PL');
 	};
 
-	// Renderowanie ikony odpowiednio do typu aktywności
 	const renderActivityIcon = (activityType: string) => {
 		switch (activityType) {
 			case 'review':
@@ -75,7 +66,6 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId, limit = 10 }) => {
 		}
 	};
 
-	// Renderowanie treści aktywności
 	const renderActivityContent = (activity: ActivityItem) => {
 		const username = activity.user_details?.username || 'Użytkownik';
 
@@ -195,7 +185,6 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId, limit = 10 }) => {
 						className='list-group-item border-start-0 border-end-0'
 					>
 						<div className='d-flex align-items-start'>
-							{/* Avatar użytkownika */}
 							<div className='me-3'>
 								{activity.user_details?.avatar_url ? (
 									<img
@@ -218,7 +207,6 @@ const ActivityFeed: React.FC<ActivityFeedProps> = ({ userId, limit = 10 }) => {
 								)}
 							</div>
 
-							{/* Treść aktywności */}
 							<div className='flex-grow-1'>
 								<div className='mb-1 d-flex'>
 									<div className='me-2'>

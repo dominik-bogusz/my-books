@@ -91,7 +91,6 @@ const ExchangeTransactionList: React.FC<ExchangeTransactionListProps> = ({
 				const isOwner = user?.id === transaction.owner_id;
 				const isRequester = user?.id === transaction.requester_id;
 
-				// Safety check - skip if no offer details
 				if (!transaction.offer_details) return null;
 
 				return (
@@ -153,7 +152,6 @@ const ExchangeTransactionList: React.FC<ExchangeTransactionListProps> = ({
 							</div>
 						</div>
 
-						{/* Akcje dla właściciela oferty */}
 						{isOwner && transaction.status === 'oczekująca' && (
 							<div className='d-flex justify-content-end gap-2'>
 								<button
@@ -195,7 +193,6 @@ const ExchangeTransactionList: React.FC<ExchangeTransactionListProps> = ({
 							</div>
 						)}
 
-						{/* Akcje dla osoby zamieniającej się */}
 						{isRequester && transaction.status === 'oczekująca' && (
 							<div className='d-flex justify-content-end'>
 								<button
@@ -219,7 +216,6 @@ const ExchangeTransactionList: React.FC<ExchangeTransactionListProps> = ({
 							</div>
 						)}
 
-						{/* Przycisk zakończenia wymiany dla obu stron */}
 						{(isOwner || isRequester) &&
 							transaction.status === 'zaakceptowana' && (
 								<div className='d-flex justify-content-end'>

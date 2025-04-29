@@ -6,7 +6,6 @@ import BookList from '../components/BookList';
 import useBookActions from '../hooks/useBookActions';
 import useStorage from '../hooks/useStorage';
 import ActivityFeed from '../components/ActivityFeed';
-import NotificationsDropdown from '../components/NotificationsDropdown';
 import useReadingProgress from '../hooks/useReadingProgress';
 import ReadingStats from '../components/ReadingStats';
 import useSocial from '../hooks/useSocial';
@@ -26,7 +25,6 @@ const Profile: React.FC = () => {
 		isLoading: authLoading,
 	} = useAuth();
 
-	// Używamy bezpośrednio hooka useBookActions do pobierania książek
 	const {
 		favoriteBooks,
 		readingList,
@@ -55,10 +53,8 @@ const Profile: React.FC = () => {
 		isLoadingStats,
 		statsError,
 		readingGoal,
-		isLoadingGoal,
 		setReadingGoal,
 		updateReadingGoal,
-		fetchUserReadingStats,
 	} = useReadingProgress();
 
 	const {
@@ -66,10 +62,6 @@ const Profile: React.FC = () => {
 		following,
 		isLoadingFollowers,
 		isLoadingFollowing,
-		followersError,
-		followingError,
-		userActivity,
-		isLoadingActivity,
 		fetchUserFollowers,
 		fetchUserFollowing,
 		fetchUserActivity,
@@ -87,7 +79,6 @@ const Profile: React.FC = () => {
 			fetchUserFollowing(user.id);
 			fetchUserActivity(user.id);
 
-			// Ustaw wartość formularza celu, gdy cel się załaduje
 			if (readingGoal) {
 				setGoalBooks(readingGoal.goal_books);
 			}
@@ -120,7 +111,6 @@ const Profile: React.FC = () => {
 		}
 	};
 
-	// Fetch profile data
 	useEffect(() => {
 		if (!isAuthenticated || !user) {
 			navigate('/login');
@@ -130,16 +120,14 @@ const Profile: React.FC = () => {
 		const fetchProfile = async () => {
 			setIsLoading(true);
 			try {
-				// Fetch profile data
 				const { data: profileData, error: profileError } = await supabase
 					.from('profiles')
 					.select('*')
 					.eq('id', user.id)
-					.maybeSingle(); // Use maybeSingle() instead of single() to prevent errors when no record exists
+					.maybeSingle();
 
 				if (profileError && !profileError.message.includes('contains 0 rows')) {
 					console.error('Błąd podczas pobierania profilu:', profileError);
-					// Log error but continue loading the interface
 				}
 
 				if (profileData) {
@@ -148,8 +136,6 @@ const Profile: React.FC = () => {
 						avatar_url: profileData.avatar_url,
 					});
 				} else {
-					// If profile doesn't exist in database, use data from auth user metadata
-					// and create a profile record
 					const defaultUsername =
 						user.user_metadata?.username || user.email?.split('@')[0] || '';
 					setProfileData({
@@ -157,7 +143,6 @@ const Profile: React.FC = () => {
 						avatar_url: user.user_metadata?.avatar_url || null,
 					});
 
-					// Create profile record if it doesn't exist
 					const { error: insertError } = await supabase
 						.from('profiles')
 						.insert({
@@ -173,7 +158,6 @@ const Profile: React.FC = () => {
 				}
 			} catch (error) {
 				console.error('Błąd w pobieraniu profilu:', error);
-				// Don't block the interface loading
 			} finally {
 				setIsLoading(false);
 			}
@@ -193,7 +177,6 @@ const Profile: React.FC = () => {
 		setIsSaving(true);
 
 		try {
-			// Używamy funkcji z hooka useStorage
 			const { url, error: uploadError } = await uploadAvatar(file);
 
 			if (uploadError) {
@@ -202,13 +185,11 @@ const Profile: React.FC = () => {
 			}
 
 			if (url) {
-				// Aktualizujemy dane profilu
 				setProfileData({
 					...profileData,
 					avatar_url: url,
 				});
 
-				// Zapisujemy zmiany w profilu
 				const { success, error: updateError } = await updateProfile({
 					username: profileData.username,
 					avatar_url: url,
@@ -249,8 +230,6 @@ const Profile: React.FC = () => {
 			} else {
 				setError(error || 'Wystąpił błąd podczas aktualizacji profilu');
 			}
-		} catch (err) {
-			setError('Nieoczekiwany błąd. Spróbuj ponownie później.');
 		} finally {
 			setIsSaving(false);
 		}
@@ -274,9 +253,6 @@ const Profile: React.FC = () => {
 				setError(error || 'Wystąpił błąd podczas usuwania konta');
 				setShowDeleteConfirmation(false);
 			}
-		} catch (err) {
-			setError('Nieoczekiwany błąd. Spróbuj ponownie później.');
-			setShowDeleteConfirmation(false);
 		} finally {
 			setIsDeleting(false);
 		}
@@ -294,7 +270,7 @@ const Profile: React.FC = () => {
 	}
 
 	if (!isAuthenticated) {
-		return null; // Will redirect via useEffect
+		return null;
 	}
 
 	return (
@@ -303,7 +279,6 @@ const Profile: React.FC = () => {
 				<div className='col-lg-4 mb-4'>
 					<div className='card shadow-sm'>
 						<div className='card-body text-center'>
-							{/* Profile Avatar */}
 							<div className='mb-3'>
 								{profileData.avatar_url ? (
 									<img
@@ -329,7 +304,6 @@ const Profile: React.FC = () => {
 									</div>
 								)}
 
-								{/* Zawsze pokazujemy możliwość zmiany zdjęcia */}
 								<div className='mt-2'>
 									<input
 										type='file'
@@ -350,7 +324,6 @@ const Profile: React.FC = () => {
 								</div>
 							</div>
 
-							{/* Informacje o profilu - nazwa i email bez przycisków zarządzania */}
 							<div>
 								<h3 className='card-title mb-0'>{profileData.username}</h3>
 								<p className='text-muted'>{user?.email}</p>
@@ -372,7 +345,6 @@ const Profile: React.FC = () => {
 				</div>
 
 				<div className='col-lg-8'>
-					{/* Favorite Books Section */}
 					<ul className='nav nav-tabs mb-4'>
 						<li className='nav-item'>
 							<button
@@ -702,7 +674,6 @@ const Profile: React.FC = () => {
 							</div>
 							<div className='card-body'>
 								{isEditing ? (
-									/* Edit Profile Form - istniejący kod */
 									<div>
 										<div className='mb-3'>
 											<label htmlFor='username' className='form-label'>
@@ -788,7 +759,6 @@ const Profile: React.FC = () => {
 				</div>
 			</div>
 
-			{/* Modal potwierdzenia usunięcia konta */}
 			{showDeleteConfirmation && (
 				<div
 					className='modal fade show'
